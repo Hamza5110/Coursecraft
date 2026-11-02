@@ -8,6 +8,8 @@ import CourseDetail from "./components/CourseDetail";
 import LessonDetail from "./components/LessonDetail";
 import InstructorDashboard from "./components/InstructorDashboard";
 import Signup from "./components/Signup";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import CreateBlog from "./components/CreateBlog";
 import BlogDetail from "./components/BlogDetail";
 import LikedBlogs from "./components/LikedBlogs";
@@ -43,6 +45,8 @@ function App() {
         <>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </>
       )}

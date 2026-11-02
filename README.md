@@ -7,7 +7,7 @@ Full-stack learning platform with a React frontend and Express + MongoDB backend
 | Layer    | Stack                                      |
 | -------- | ------------------------------------------ |
 | Frontend | React 19, Vite, React Router, Tailwind CSS |
-| Backend  | Express, Mongoose, JWT, bcryptjs, Multer   |
+| Backend  | Express, Mongoose, JWT, bcryptjs, Multer, Nodemailer |
 | Database | MongoDB                                    |
 
 ## Project Structure
@@ -50,6 +50,17 @@ Edit `.env`:
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
+FRONTEND_URL=http://localhost:5173
+```
+
+Optional SMTP (for real email). If omitted, Nodemailer uses an Ethereal test account and logs a preview URL in the backend console:
+
+```
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_password
+SMTP_FROM="Blog Verse <noreply@example.com>"
 ```
 
 Start the server:
@@ -79,6 +90,7 @@ App runs at `http://localhost:5173`.
 ## Features
 
 - User signup and login (JWT)
+- Forgot / reset password (short-lived JWT reset token + Nodemailer)
 - Roles: `student`, `instructor`, `admin` (signup allows student/instructor only; set admin in the database)
 - Blog CRUD with author ownership (owner or admin can edit/delete)
 - Image upload for blog/course covers (Multer → `backend/uploads`, served at `/uploads`)
@@ -103,6 +115,8 @@ App runs at `http://localhost:5173`.
 | ----------------------------------- | ------------------------ | ---- | ------------------------------ |
 | `/login`                            | Log in                   | No   |                                |
 | `/signup`                           | Sign up                  | No   |                                |
+| `/forgot-password`                  | Request password reset   | No   |                                |
+| `/reset-password`                   | Set new password         | No   | Uses `?token=` from email      |
 | `/`                                 | Home / blogs + search    | Yes  |                                |
 | `/blogs/new`                        | Create blog              | Yes  |                                |
 | `/blogs/liked`                      | Liked / bookmarked blogs | Yes  |                                |
@@ -120,10 +134,12 @@ App runs at `http://localhost:5173`.
 
 ### Auth — `/api/auth`
 
-| Method | Path      | Description                          |
-| ------ | --------- | ------------------------------------ |
-| POST   | `/signup` | Register (`student` or `instructor`) |
-| POST   | `/login`  | Log in                               |
+| Method | Path               | Description                                      |
+| ------ | ------------------ | ------------------------------------------------ |
+| POST   | `/signup`          | Register (`student` or `instructor`)             |
+| POST   | `/login`           | Log in                                           |
+| POST   | `/forgot-password` | Email a reset link (JWT, 15m). Always generic OK |
+| POST   | `/reset-password`  | Body: `{ token, newPassword }`                   |
 
 ### Blogs — `/api/blog`
 

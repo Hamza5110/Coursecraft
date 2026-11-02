@@ -58,6 +58,24 @@ export async function login(payload) {
   return handleResponse(res);
 }
 
+export async function forgotPassword(payload) {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function resetPassword(payload) {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
 export async function getAllBlogs(params = {}) {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
