@@ -1,5 +1,6 @@
 import Course from "../models/Course.js";
 import Lesson from "../models/Lesson.js";
+import Review from "../models/Review.js";
 import { makeUniqueSlug, slugify } from "../utils/slugify.js";
 import { buildPagination, parsePagination } from "../utils/pagination.js";
 
@@ -246,7 +247,10 @@ export const deleteCourse = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Course not found" });
     }
-    await Lesson.deleteMany({ course: course._id });
+    await Promise.all([
+      Lesson.deleteMany({ course: course._id }),
+      Review.deleteMany({ course: course._id }),
+    ]);
     res
       .status(200)
       .json({ success: true, message: "Course deleted successfully" });

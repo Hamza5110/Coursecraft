@@ -225,6 +225,11 @@ function Course() {
                     <p className="text-sm text-gray-500 mb-2">
                       By {instructorName}
                     </p>
+                    <p className="text-sm text-amber-600 mb-2">
+                      {course.reviewCount > 0
+                        ? `★ ${Number(course.averageRating || 0).toFixed(1)} (${course.reviewCount})`
+                        : "No ratings yet"}
+                    </p>
                     <p className="text-gray-600 mb-4 flex-1">{preview}</p>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-blue-600">

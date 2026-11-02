@@ -4,17 +4,22 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import {
+  createCourseReview,
   createLesson,
   deleteCourse,
+  deleteCourseReview,
   enrollInCourse,
   getCourseBySlug,
   getCourseLessons,
+  getCourseReviews,
   mediaUrl,
   unenrollFromCourse,
   updateCourse,
+  updateCourseReview,
 } from "../api/blogApi";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
+import StarRating from "./StarRating";
 import { isEmptyHtml } from "../utils/html";
 
 function isSameId(a, b) {
@@ -51,6 +56,15 @@ function CourseDetail() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState(null);
+  const [editingReview, setEditingReview] = useState(false);
+
   const isStudent = user?.role === "student";
   const isAdmin = user?.role === "admin";
   const isOwner =
@@ -62,6 +76,9 @@ function CourseDetail() {
     course?.students?.some((studentId) => isSameId(studentId, user?.id)) ||
     false;
   const canViewLessons = canManage || enrolled;
+  const myReview =
+    reviews.find((review) => isSameId(review.author, user?.id)) || null;
+  const canReview = isStudent && enrolled;
 
   const loadLessons = async () => {
     setLessonsError("");
@@ -71,6 +88,28 @@ function CourseDetail() {
     } catch (err) {
       setLessons([]);
       setLessonsError(err.message);
+    }
+  };
+
+  const loadReviews = async () => {
+    setReviewsLoading(true);
+    setReviewsError("");
+    try {
+      const data = await getCourseReviews(slug);
+      setReviews(data.reviews || []);
+      setCourse((prev) =>
+        prev
+          ? {
+              ...prev,
+              averageRating: data.averageRating ?? prev.averageRating,
+              reviewCount: data.reviewCount ?? prev.reviewCount,
+            }
+          : prev,
+      );
+    } catch (err) {
+      setReviewsError(err.message);
+    } finally {
+      setReviewsLoading(false);
     }
   };
 
@@ -94,7 +133,20 @@ function CourseDetail() {
       }
     };
     loadCourse();
+    loadReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  useEffect(() => {
+    if (!myReview) {
+      setReviewRating(5);
+      setReviewContent("");
+      setEditingReview(false);
+      return;
+    }
+    setReviewRating(myReview.rating);
+    setReviewContent(myReview.content || "");
+  }, [myReview]);
 
   useEffect(() => {
     if (!course) return;
@@ -221,6 +273,72 @@ function CourseDetail() {
     }
   };
 
+  const applyReviewStats = (data) => {
+    setCourse((prev) =>
+      prev
+        ? {
+            ...prev,
+            averageRating: data.averageRating ?? prev.averageRating,
+            reviewCount: data.reviewCount ?? prev.reviewCount,
+          }
+        : prev,
+    );
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    setSavingReview(true);
+    setError("");
+    setMessage("");
+    try {
+      if (myReview) {
+        const data = await updateCourseReview(slug, myReview._id, {
+          rating: reviewRating,
+          content: reviewContent,
+        });
+        setReviews((prev) =>
+          prev.map((r) => (r._id === data.review._id ? data.review : r)),
+        );
+        applyReviewStats(data);
+        setEditingReview(false);
+        setMessage(data.message || "Review updated");
+      } else {
+        const data = await createCourseReview(slug, {
+          rating: reviewRating,
+          content: reviewContent,
+        });
+        setReviews((prev) => [data.review, ...prev]);
+        applyReviewStats(data);
+        setMessage(data.message || "Review added");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (review) => {
+    const confirmed = window.confirm("Delete this review?");
+    if (!confirmed) return;
+
+    setDeletingReviewId(review._id);
+    setError("");
+    try {
+      const data = await deleteCourseReview(slug, review._id);
+      setReviews((prev) => prev.filter((r) => r._id !== review._id));
+      applyReviewStats(data);
+      setMessage(data.message || "Review deleted");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
+
+  const canDeleteReview = (review) =>
+    isAdmin || isSameId(review.author, user?.id);
+
   const instructorName =
     course?.instructor?.username ||
     course?.instructor?.email ||
@@ -262,9 +380,21 @@ function CourseDetail() {
                   {course.createdAt &&
                     ` · ${new Date(course.createdAt).toLocaleDateString()}`}
                 </p>
-                <p className="text-2xl font-semibold text-blue-600 mb-4">
+                <p className="text-2xl font-semibold text-blue-600 mb-2">
                   ${course.price}
                 </p>
+                <div className="flex items-center gap-2 mb-4">
+                  <StarRating
+                    value={Math.round(course.averageRating || 0)}
+                    readOnly
+                    size="sm"
+                  />
+                  <span className="text-sm text-gray-600">
+                    {course.reviewCount > 0
+                      ? `${Number(course.averageRating || 0).toFixed(1)} · ${course.reviewCount} review${course.reviewCount === 1 ? "" : "s"}`
+                      : "No reviews yet"}
+                  </span>
+                </div>
                 <p className="text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">
                   {course.description}
                 </p>
@@ -424,6 +554,140 @@ function CourseDetail() {
                   </button>
                 </form>
               )}
+            </section>
+          )}
+
+          {!loading && course && !editing && (
+            <section className="mt-8 bg-white p-6 rounded-xl shadow-lg">
+              <h2 className="text-2xl font-bold mb-4">
+                Reviews ({course.reviewCount || reviews.length})
+              </h2>
+
+              {canReview && (!myReview || editingReview) && (
+                <form onSubmit={handleSubmitReview} className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {myReview ? "Update your review" : "Leave a review"}
+                  </label>
+                  <div className="mb-3">
+                    <StarRating
+                      value={reviewRating}
+                      onChange={setReviewRating}
+                    />
+                  </div>
+                  <textarea
+                    value={reviewContent}
+                    onChange={(e) => setReviewContent(e.target.value)}
+                    rows={3}
+                    className="w-full border p-2 rounded mb-3 resize-y"
+                    placeholder="Share your experience (optional)..."
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      disabled={savingReview}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-60"
+                    >
+                      {savingReview
+                        ? "Saving..."
+                        : myReview
+                          ? "Save Review"
+                          : "Submit Review"}
+                    </button>
+                    {myReview && editingReview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingReview(false);
+                          setReviewRating(myReview.rating);
+                          setReviewContent(myReview.content || "");
+                        }}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+
+              {canReview && myReview && !editingReview && (
+                <div className="mb-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingReview(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Edit my review
+                  </button>
+                </div>
+              )}
+
+              {isStudent && !enrolled && (
+                <p className="text-gray-500 mb-4">
+                  Enroll in this course to leave a rating and review.
+                </p>
+              )}
+
+              {reviewsLoading && (
+                <p className="text-gray-500">Loading reviews...</p>
+              )}
+              {reviewsError && (
+                <p className="text-red-500 mb-4">{reviewsError}</p>
+              )}
+              {!reviewsLoading && reviews.length === 0 && !reviewsError && (
+                <p className="text-gray-500">No reviews yet. Be the first.</p>
+              )}
+
+              <ul className="space-y-4">
+                {reviews.map((review) => (
+                  <li
+                    key={review._id}
+                    className="border border-gray-100 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {review.authorName ||
+                            review.author?.username ||
+                            "User"}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <StarRating
+                            value={review.rating}
+                            readOnly
+                            size="sm"
+                          />
+                          <span className="text-xs text-gray-500">
+                            {review.createdAt &&
+                              new Date(review.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      {canDeleteReview(review) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReview(review)}
+                          disabled={deletingReviewId === review._id}
+                          className="text-sm text-red-600 hover:text-red-700 disabled:opacity-60"
+                        >
+                          {deletingReviewId === review._id
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
+                      )}
+                    </div>
+                    {review.content ? (
+                      <p className="text-gray-700 whitespace-pre-wrap">
+                        {review.content}
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 text-sm italic">
+                        No written review
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

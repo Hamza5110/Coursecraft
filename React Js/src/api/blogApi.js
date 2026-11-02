@@ -258,6 +258,45 @@ export async function getCourseLessons(slug) {
   return handleResponse(res);
 }
 
+export async function getCourseReviews(slug) {
+  const res = await fetch(`${API_BASE}/course/${slug}/reviews`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function createCourseReview(slug, payload) {
+  const res = await fetch(`${API_BASE}/course/${slug}/reviews`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function updateCourseReview(slug, reviewId, payload) {
+  const res = await fetch(
+    `${API_BASE}/course/${slug}/reviews/${reviewId}`,
+    {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    },
+  );
+  return handleResponse(res);
+}
+
+export async function deleteCourseReview(slug, reviewId) {
+  const res = await fetch(
+    `${API_BASE}/course/${slug}/reviews/${reviewId}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(),
+    },
+  );
+  return handleResponse(res);
+}
+
 export async function getLesson(slug, lessonId) {
   const res = await fetch(`${API_BASE}/course/${slug}/lessons/${lessonId}`, {
     headers: authHeaders(),

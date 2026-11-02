@@ -22,7 +22,7 @@ blog-verse/
 └── backend/                  # Express API
     ├── controller/
     ├── middleware/           # JWT protect + role authorize + Multer upload
-    ├── models/               # User, Blog, Comment, Course, Lesson
+    ├── models/               # User, Blog, Comment, Course, Lesson, Review
     ├── routes/
     ├── uploads/              # Local image storage (gitignored)
     ├── scripts/              # One-off migrations
@@ -104,6 +104,7 @@ App runs at `http://localhost:5173`.
 - Course search and filters (title, min/max price, instructor)
 - Course lessons (title, rich content, video URL, order) — enrolled students, course instructor, or admin can open them
 - Students can enroll / unenroll and view **My Courses**
+- Course ratings & reviews (1–5 stars + optional text; enrolled students only; one review per student; average shown on list/detail)
 - Instructor dashboard — teaching courses, enrollment/lesson counts, open/edit from one place
 - Profile page (update username/email)
 - Change password on Profile (verify current password, bcrypt hash)
@@ -126,7 +127,7 @@ App runs at `http://localhost:5173`.
 | `/my-courses`                       | Enrolled courses         | Yes  | Students                       |
 | `/instructor`                       | Instructor dashboard     | Yes  | Instructor / admin             |
 | `/courses/new`                      | Create course            | Yes  | Instructor / admin             |
-| `/courses/:slug`                    | Course detail + lessons  | Yes  |                                |
+| `/courses/:slug`                    | Course detail + lessons + reviews | Yes | Enrolled students can rate     |
 | `/courses/:slug/lessons/:lessonId`  | Lesson detail            | Yes  | Enrolled / instructor / admin  |
 | `/profile`                          | Profile + change password| Yes  |                                |
 | `/admin/users`                      | Manage users + roles     | Yes  | Admin only                     |
@@ -168,9 +169,13 @@ App runs at `http://localhost:5173`.
 | GET    | `/:slug`                    | Public                   | Get course by slug                               |
 | POST   | `/`                         | instructor, admin        | Create course                                    |
 | PUT    | `/:slug`                    | course instructor, admin | Update course (owner or admin only)              |
-| DELETE | `/:slug`                    | admin                    | Delete course (+ its lessons)                    |
+| DELETE | `/:slug`                    | admin                    | Delete course (+ its lessons and reviews)        |
 | POST   | `/:slug/enroll`             | student                  | Enroll                                           |
 | POST   | `/:slug/unenroll`           | student                  | Unenroll                                         |
+| GET    | `/:slug/reviews`            | Public                   | List reviews + average / count                   |
+| POST   | `/:slug/reviews`            | enrolled student         | Create review (`rating` 1–5, optional `content`) |
+| PUT    | `/:slug/reviews/:reviewId`  | review owner             | Update own review                                |
+| DELETE | `/:slug/reviews/:reviewId`  | owner, admin             | Delete a review                                  |
 | GET    | `/:slug/lessons`            | enrolled / instructor / admin | List lessons                            |
 | GET    | `/:slug/lessons/:lessonId`  | enrolled / instructor / admin | Get one lesson                          |
 | POST   | `/:slug/lessons`            | course instructor, admin | Create lesson                                    |

@@ -33,6 +33,17 @@ const courseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     }],
+    averageRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5,
+    },
+    reviewCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
 }, { timestamps: true });
 
 const Course = mongoose.model("Course", courseSchema);

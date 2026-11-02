@@ -19,6 +19,12 @@ import {
   updateLesson,
   deleteLesson,
 } from "../controller/lesson_controller.js";
+import {
+  getReviewsByCourse,
+  createReview,
+  updateReview,
+  deleteReview,
+} from "../controller/review_controller.js";
 
 const router = express.Router();
 
@@ -53,6 +59,16 @@ router.delete(
   authorize("instructor", "admin"),
   deleteLesson,
 );
+
+router.get("/:slug/reviews", getReviewsByCourse);
+router.post(
+  "/:slug/reviews",
+  protect,
+  authorize("student"),
+  createReview,
+);
+router.put("/:slug/reviews/:reviewId", protect, updateReview);
+router.delete("/:slug/reviews/:reviewId", protect, deleteReview);
 
 router.get("/:slug", getCourseBySlug);
 router.put("/:slug", protect, authorize("instructor", "admin"), updateCourse);
