@@ -177,6 +177,13 @@ export async function getMyCourses() {
   return handleResponse(res);
 }
 
+export async function getTeachingCourses() {
+  const res = await fetch(`${API_BASE}/course/teaching`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
+}
+
 export async function getCourseBySlug(slug) {
   const res = await fetch(`${API_BASE}/course/${slug}`, {
     headers: authHeaders(),

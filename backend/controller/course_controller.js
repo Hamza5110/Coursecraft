@@ -154,6 +154,52 @@ export const getMyCourses = async (req, res) => {
   }
 };
 
+export const getTeachingCourses = async (req, res) => {
+  try {
+    const filter =
+      req.user.role === "admin"
+        ? {}
+        : { instructor: req.user._id };
+
+    const courses = await Course.find(filter)
+      .populate("instructor", "username email")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const withStats = await Promise.all(
+      courses.map(async (course) => {
+        const lessonCount = await Lesson.countDocuments({ course: course._id });
+        return {
+          ...course,
+          enrollmentCount: course.students?.length || 0,
+          lessonCount,
+        };
+      }),
+    );
+
+    const totalEnrollments = withStats.reduce(
+      (sum, course) => sum + course.enrollmentCount,
+      0,
+    );
+    const totalLessons = withStats.reduce(
+      (sum, course) => sum + course.lessonCount,
+      0,
+    );
+
+    res.status(200).json({
+      success: true,
+      courses: withStats,
+      summary: {
+        courseCount: withStats.length,
+        totalEnrollments,
+        totalLessons,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const updateCourse = async (req, res) => {
   try {
     const course = await findCourseBySlug(req.params.slug);
@@ -262,6 +308,7 @@ export default {
   getCourseInstructors,
   getCourseBySlug,
   getMyCourses,
+  getTeachingCourses,
   updateCourse,
   deleteCourse,
   enrollInCourse,

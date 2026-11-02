@@ -75,9 +75,14 @@ function Navbar() {
               Liked
             </NavLink>
             {canCreateCourse && (
-              <NavLink to="/courses/new" className={linkClass}>
-                Create Course
-              </NavLink>
+              <>
+                <NavLink to="/instructor" className={linkClass}>
+                  Dashboard
+                </NavLink>
+                <NavLink to="/courses/new" className={linkClass}>
+                  Create Course
+                </NavLink>
+              </>
             )}
             {isAdmin && (
               <NavLink to="/admin/users" className={linkClass}>
@@ -201,13 +206,22 @@ function Navbar() {
             Liked
           </NavLink>
           {canCreateCourse && (
-            <NavLink
-              to="/courses/new"
-              className={linkClass}
-              onClick={closeMenus}
-            >
-              Create Course
-            </NavLink>
+            <>
+              <NavLink
+                to="/instructor"
+                className={linkClass}
+                onClick={closeMenus}
+              >
+                Dashboard
+              </NavLink>
+              <NavLink
+                to="/courses/new"
+                className={linkClass}
+                onClick={closeMenus}
+              >
+                Create Course
+              </NavLink>
+            </>
           )}
           {isAdmin && (
             <NavLink

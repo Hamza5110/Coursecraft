@@ -6,6 +6,7 @@ import MyCourses from "./components/MyCourses";
 import CreateCourse from "./components/CreateCourse";
 import CourseDetail from "./components/CourseDetail";
 import LessonDetail from "./components/LessonDetail";
+import InstructorDashboard from "./components/InstructorDashboard";
 import Signup from "./components/Signup";
 import CreateBlog from "./components/CreateBlog";
 import BlogDetail from "./components/BlogDetail";
@@ -27,6 +28,7 @@ function App() {
           <Route path="/blogs/:id" element={<BlogDetail />} />
           <Route path="/courses" element={<Course />} />
           <Route path="/my-courses" element={<MyCourses />} />
+          <Route path="/instructor" element={<InstructorDashboard />} />
           <Route path="/courses/new" element={<CreateCourse />} />
           <Route
             path="/courses/:slug/lessons/:lessonId"

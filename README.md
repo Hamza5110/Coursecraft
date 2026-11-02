@@ -91,6 +91,7 @@ App runs at `http://localhost:5173`.
 - Course search and filters (title, min/max price, instructor)
 - Course lessons (title, content, video URL, order) — enrolled students, course instructor, or admin can open them
 - Students can enroll / unenroll and view **My Courses**
+- Instructor dashboard — teaching courses, enrollment/lesson counts, open/edit from one place
 - Profile page (update username/email)
 - Change password on Profile (verify current password, bcrypt hash)
 - Admin users page (list and delete users; promote student ↔ instructor)
@@ -108,6 +109,7 @@ App runs at `http://localhost:5173`.
 | `/blogs/:id`                        | Blog detail + comments   | Yes  | Like / unlike                  |
 | `/courses`                          | Course list + filters    | Yes  |                                |
 | `/my-courses`                       | Enrolled courses         | Yes  | Students                       |
+| `/instructor`                       | Instructor dashboard     | Yes  | Instructor / admin             |
 | `/courses/new`                      | Create course            | Yes  | Instructor / admin             |
 | `/courses/:slug`                    | Course detail + lessons  | Yes  |                                |
 | `/courses/:slug/lessons/:lessonId`  | Lesson detail            | Yes  | Enrolled / instructor / admin  |
@@ -145,6 +147,7 @@ App runs at `http://localhost:5173`.
 | GET    | `/`                         | Public                   | List courses (`?search=&minPrice=&maxPrice=&instructor=&page=&limit=`) |
 | GET    | `/instructors`              | Public                   | Instructors that have courses (for filters)      |
 | GET    | `/my`                       | student                  | Courses the logged-in student is enrolled in     |
+| GET    | `/teaching`                 | instructor, admin        | Instructor dashboard courses + enrollment/lesson counts (admin sees all) |
 | GET    | `/:slug`                    | Public                   | Get course by slug                               |
 | POST   | `/`                         | instructor, admin        | Create course                                    |
 | PUT    | `/:slug`                    | instructor, admin        | Update course                                    |

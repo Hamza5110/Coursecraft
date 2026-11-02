@@ -6,6 +6,7 @@ import {
   getCourseInstructors,
   getCourseBySlug,
   getMyCourses,
+  getTeachingCourses,
   updateCourse,
   deleteCourse,
   enrollInCourse,
@@ -25,6 +26,12 @@ router.post("/", protect, authorize("instructor", "admin"), createCourse);
 router.get("/", getCourses);
 router.get("/instructors", getCourseInstructors);
 router.get("/my", protect, authorize("student"), getMyCourses);
+router.get(
+  "/teaching",
+  protect,
+  authorize("instructor", "admin"),
+  getTeachingCourses,
+);
 
 router.get("/:slug/lessons", protect, getLessonsByCourse);
 router.get("/:slug/lessons/:lessonId", protect, getLessonById);
