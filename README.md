@@ -87,7 +87,7 @@ App runs at `http://localhost:5173`.
 - Search blogs by title
 - Pagination for blogs and courses (`?page=1&limit=10`)
 - Courses with slug URLs
-- Instructors/admins can create and update courses; admin can delete
+- Instructors/admins can create courses; only the owning instructor (or admin) can update; admin can delete
 - Course search and filters (title, min/max price, instructor)
 - Course lessons (title, content, video URL, order) — enrolled students, course instructor, or admin can open them
 - Students can enroll / unenroll and view **My Courses**
@@ -150,7 +150,7 @@ App runs at `http://localhost:5173`.
 | GET    | `/teaching`                 | instructor, admin        | Instructor dashboard courses + enrollment/lesson counts (admin sees all) |
 | GET    | `/:slug`                    | Public                   | Get course by slug                               |
 | POST   | `/`                         | instructor, admin        | Create course                                    |
-| PUT    | `/:slug`                    | instructor, admin        | Update course                                    |
+| PUT    | `/:slug`                    | course instructor, admin | Update course (owner or admin only)              |
 | DELETE | `/:slug`                    | admin                    | Delete course (+ its lessons)                    |
 | POST   | `/:slug/enroll`             | student                  | Enroll                                           |
 | POST   | `/:slug/unenroll`           | student                  | Unenroll                                         |

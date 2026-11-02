@@ -209,6 +209,15 @@ export const updateCourse = async (req, res) => {
         .json({ success: false, message: "Course not found" });
     }
 
+    const isOwner = String(course.instructor) === String(req.user._id);
+    const isAdmin = req.user.role === "admin";
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the course instructor or admin can update this course",
+      });
+    }
+
     const { title, description, price, image } = req.body;
     if (title !== undefined) {
       course.title = title;
