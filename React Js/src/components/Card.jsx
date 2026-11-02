@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { mediaUrl } from "../api/blogApi";
+import { stripHtml } from "../utils/html";
 
 export default function Card({
   id,
@@ -9,8 +10,9 @@ export default function Card({
   likesCount = 0,
   coverImage,
 }) {
+  const plain = stripHtml(body || "");
   const preview =
-    body?.length > 120 ? `${body.slice(0, 120)}...` : body;
+    plain.length > 120 ? `${plain.slice(0, 120)}...` : plain;
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 border border-gray-200 flex flex-col overflow-hidden">

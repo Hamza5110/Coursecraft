@@ -5,6 +5,8 @@ import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { createBlog } from "../api/blogApi";
 import ImageUploadField from "./ImageUploadField";
+import RichTextEditor from "./RichTextEditor";
+import { isEmptyHtml } from "../utils/html";
 
 function CreateBlog() {
   const navigate = useNavigate();
@@ -20,11 +22,15 @@ function CreateBlog() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!form.title.trim() || isEmptyHtml(form.content)) {
+      setError("Title and content are required");
+      return;
+    }
     setLoading(true);
     try {
       await createBlog({
         title: form.title.trim(),
-        content: form.content.trim(),
+        content: form.content,
         coverImage: form.coverImage.trim(),
       });
       navigate("/");
@@ -69,14 +75,11 @@ function CreateBlog() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Content
             </label>
-            <textarea
-              name="content"
+            <RichTextEditor
               value={form.content}
-              onChange={handleChange}
+              onChange={(content) => setForm({ ...form, content })}
               placeholder="Write your blog content..."
-              rows={10}
-              className="w-full border p-2 rounded mb-4 resize-y"
-              required
+              minHeightClass="min-h-[220px]"
             />
 
             <ImageUploadField

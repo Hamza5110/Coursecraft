@@ -14,6 +14,8 @@ import {
   updateCourse,
 } from "../api/blogApi";
 import ImageUploadField from "./ImageUploadField";
+import RichTextEditor from "./RichTextEditor";
+import { isEmptyHtml } from "../utils/html";
 
 function isSameId(a, b) {
   if (!a || !b) return false;
@@ -192,13 +194,17 @@ function CourseDetail() {
 
   const handleCreateLesson = async (e) => {
     e.preventDefault();
-    setSavingLesson(true);
     setError("");
     setMessage("");
+    if (!lessonForm.title.trim() || isEmptyHtml(lessonForm.content)) {
+      setError("Lesson title and content are required");
+      return;
+    }
+    setSavingLesson(true);
     try {
       const payload = {
         title: lessonForm.title.trim(),
-        content: lessonForm.content.trim(),
+        content: lessonForm.content,
         videoUrl: lessonForm.videoUrl.trim(),
       };
       if (lessonForm.order !== "") {
@@ -400,13 +406,13 @@ function CourseDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Content
                   </label>
-                  <textarea
-                    name="content"
+                  <RichTextEditor
                     value={lessonForm.content}
-                    onChange={handleLessonChange}
-                    rows={5}
-                    className="w-full border p-2 rounded mb-4 resize-y"
-                    required
+                    onChange={(content) =>
+                      setLessonForm({ ...lessonForm, content })
+                    }
+                    placeholder="Lesson content..."
+                    minHeightClass="min-h-[140px]"
                   />
 
                   <button

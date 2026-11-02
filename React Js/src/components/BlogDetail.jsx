@@ -14,6 +14,9 @@ import {
   updateBlog,
 } from "../api/blogApi";
 import ImageUploadField from "./ImageUploadField";
+import RichTextEditor from "./RichTextEditor";
+import RichTextContent from "./RichTextContent";
+import { isEmptyHtml } from "../utils/html";
 
 function BlogDetail() {
   const { id } = useParams();
@@ -88,12 +91,16 @@ function BlogDetail() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError("");
+    if (!form.title.trim() || isEmptyHtml(form.content)) {
+      setError("Title and content are required");
+      return;
+    }
+    setSaving(true);
     try {
       const data = await updateBlog(id, {
         title: form.title.trim(),
-        content: form.content.trim(),
+        content: form.content,
         coverImage: form.coverImage.trim(),
       });
       setBlog(data.blog);
@@ -210,9 +217,7 @@ function BlogDetail() {
                   {blog.createdAt &&
                     ` · ${new Date(blog.createdAt).toLocaleDateString()}`}
                 </p>
-                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed mb-8">
-                  {blog.content}
-                </p>
+                <RichTextContent html={blog.content} className="mb-8" />
 
                 <div className="flex flex-wrap gap-3 mb-2">
                   <button
@@ -276,13 +281,11 @@ function BlogDetail() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Content
               </label>
-              <textarea
-                name="content"
+              <RichTextEditor
                 value={form.content}
-                onChange={handleChange}
-                rows={10}
-                className="w-full border p-2 rounded mb-4 resize-y"
-                required
+                onChange={(content) => setForm({ ...form, content })}
+                placeholder="Update blog content..."
+                minHeightClass="min-h-[220px]"
               />
 
               <ImageUploadField

@@ -6,7 +6,7 @@ Full-stack learning platform with a React frontend and Express + MongoDB backend
 
 | Layer    | Stack                                      |
 | -------- | ------------------------------------------ |
-| Frontend | React 19, Vite, React Router, Tailwind CSS |
+| Frontend | React 19, Vite, React Router, Tailwind CSS, Quill |
 | Backend  | Express, Mongoose, JWT, bcryptjs, Multer, Nodemailer |
 | Database | MongoDB                                    |
 
@@ -93,6 +93,7 @@ App runs at `http://localhost:5173`.
 - Forgot / reset password (short-lived JWT reset token + Nodemailer)
 - Roles: `student`, `instructor`, `admin` (signup allows student/instructor only; set admin in the database)
 - Blog CRUD with author ownership (owner or admin can edit/delete)
+- Rich text editor (Quill) for blog and lesson content — headings, bold/italic, lists, quotes, code, links; HTML stored in MongoDB; legacy plain text still renders
 - Image upload for blog/course covers (Multer → `backend/uploads`, served at `/uploads`)
 - Blog likes / bookmarks (`likedBy` user IDs; toggle like; Liked page)
 - Blog comments (post comments; delete own; admin can moderate)
@@ -101,7 +102,7 @@ App runs at `http://localhost:5173`.
 - Courses with slug URLs
 - Instructors/admins can create courses; only the owning instructor (or admin) can update; admin can delete
 - Course search and filters (title, min/max price, instructor)
-- Course lessons (title, content, video URL, order) — enrolled students, course instructor, or admin can open them
+- Course lessons (title, rich content, video URL, order) — enrolled students, course instructor, or admin can open them
 - Students can enroll / unenroll and view **My Courses**
 - Instructor dashboard — teaching courses, enrollment/lesson counts, open/edit from one place
 - Profile page (update username/email)

@@ -9,6 +9,9 @@ import {
   getLesson,
   updateLesson,
 } from "../api/blogApi";
+import RichTextEditor from "./RichTextEditor";
+import RichTextContent from "./RichTextContent";
+import { isEmptyHtml } from "../utils/html";
 
 function isSameId(a, b) {
   if (!a || !b) return false;
@@ -79,13 +82,17 @@ function LessonDetail() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError("");
     setMessage("");
+    if (!form.title.trim() || isEmptyHtml(form.content)) {
+      setError("Title and content are required");
+      return;
+    }
+    setSaving(true);
     try {
       const data = await updateLesson(slug, lessonId, {
         title: form.title.trim(),
-        content: form.content.trim(),
+        content: form.content,
         videoUrl: form.videoUrl.trim(),
         order: Number(form.order),
       });
@@ -162,9 +169,7 @@ function LessonDetail() {
                 </div>
               )}
 
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed mb-8">
-                {lesson.content}
-              </p>
+              <RichTextContent html={lesson.content} className="mb-8" />
 
               {canManage && (
                 <div className="flex gap-3">
@@ -234,13 +239,11 @@ function LessonDetail() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Content
               </label>
-              <textarea
-                name="content"
+              <RichTextEditor
                 value={form.content}
-                onChange={handleChange}
-                rows={10}
-                className="w-full border p-2 rounded mb-4 resize-y"
-                required
+                onChange={(content) => setForm({ ...form, content })}
+                placeholder="Update lesson content..."
+                minHeightClass="min-h-[220px]"
               />
 
               <div className="flex gap-3">
