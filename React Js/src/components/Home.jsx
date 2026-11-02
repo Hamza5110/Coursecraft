@@ -4,10 +4,15 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Hero from "./Hero";
 import Card from "./Card";
+import Pagination from "./Pagination";
 import { getAllBlogs } from "../api/blogApi";
+
+const PAGE_LIMIT = 10;
 
 function Home() {
   const [blogs, setBlogs] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -18,8 +23,9 @@ function Home() {
       setLoading(true);
       setError("");
       try {
-        const data = await getAllBlogs({ search });
+        const data = await getAllBlogs({ search, page, limit: PAGE_LIMIT });
         setBlogs(data.blogs || []);
+        setPagination(data.pagination || null);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -27,16 +33,18 @@ function Home() {
       }
     };
     loadBlogs();
-  }, [search]);
+  }, [search, page]);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setPage(1);
     setSearch(searchInput.trim());
   };
 
   const handleClear = () => {
     setSearchInput("");
     setSearch("");
+    setPage(1);
   };
 
   return (
@@ -120,6 +128,11 @@ function Home() {
               />
             ))}
           </div>
+
+          <Pagination
+            pagination={pagination}
+            onPageChange={(nextPage) => setPage(nextPage)}
+          />
         </div>
       </section>
       <Footer />

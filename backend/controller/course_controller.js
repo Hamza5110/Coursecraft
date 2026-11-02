@@ -1,6 +1,7 @@
 import Course from "../models/Course.js";
 import Lesson from "../models/Lesson.js";
 import { makeUniqueSlug, slugify } from "../utils/slugify.js";
+import { buildPagination, parsePagination } from "../utils/pagination.js";
 
 const findCourseBySlug = (slug) => Course.findOne({ slug });
 
@@ -37,6 +38,7 @@ const escapeRegex = (value) =>
 export const getCourses = async (req, res) => {
   try {
     const { search, minPrice, maxPrice, instructor } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
     const filter = {};
 
     if (search && String(search).trim()) {
@@ -76,10 +78,20 @@ export const getCourses = async (req, res) => {
       filter.instructor = String(instructor).trim();
     }
 
-    const courses = await Course.find(filter)
-      .populate("instructor", "username email role")
-      .sort({ createdAt: -1 });
-    res.status(200).json({ success: true, courses });
+    const [courses, total] = await Promise.all([
+      Course.find(filter)
+        .populate("instructor", "username email role")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Course.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      courses,
+      pagination: buildPagination({ page, limit, total }),
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

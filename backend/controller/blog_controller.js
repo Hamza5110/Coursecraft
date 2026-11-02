@@ -1,5 +1,6 @@
 import Blog from "../models/Blog.js";
 import Comment from "../models/Comment.js";
+import { buildPagination, parsePagination } from "../utils/pagination.js";
 
 const createBlog = async (req, res) => {
   try {
@@ -20,6 +21,7 @@ const escapeRegex = (value) =>
 const getAllBlogs = async (req, res) => {
   try {
     const { search } = req.query;
+    const { page, limit, skip } = parsePagination(req.query);
     const filter = {};
 
     if (search && String(search).trim()) {
@@ -29,10 +31,20 @@ const getAllBlogs = async (req, res) => {
       };
     }
 
-    const blogs = await Blog.find(filter)
-      .populate("author", "username email")
-      .sort({ createdAt: -1 });
-    res.status(200).json({ success: true, blogs });
+    const [blogs, total] = await Promise.all([
+      Blog.find(filter)
+        .populate("author", "username email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Blog.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      blogs,
+      pagination: buildPagination({ page, limit, total }),
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

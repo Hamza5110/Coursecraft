@@ -82,6 +82,7 @@ App runs at `http://localhost:5173`.
 - Blog CRUD with author ownership (owner or admin can edit/delete)
 - Blog comments (post comments; delete own; admin can moderate)
 - Search blogs by title
+- Pagination for blogs and courses (`?page=1&limit=10`)
 - Courses with slug URLs
 - Instructors/admins can create and update courses; admin can delete
 - Course search and filters (title, min/max price, instructor)
@@ -122,7 +123,7 @@ App runs at `http://localhost:5173`.
 
 | Method | Path                         | Access        | Description                          |
 | ------ | ---------------------------- | ------------- | ------------------------------------ |
-| GET    | `/all`                       | Public        | List blogs (`?search=` title filter) |
+| GET    | `/all`                       | Public        | List blogs (`?search=&page=&limit=`) |
 | GET    | `/:id`                       | Public        | Get one blog                         |
 | POST   | `/create`                    | auth          | Create a blog                        |
 | PUT    | `/:id`                       | owner, admin  | Update a blog                        |
@@ -135,7 +136,7 @@ App runs at `http://localhost:5173`.
 
 | Method | Path                        | Access                   | Description                                      |
 | ------ | --------------------------- | ------------------------ | ------------------------------------------------ |
-| GET    | `/`                         | Public                   | List courses (`?search=&minPrice=&maxPrice=&instructor=`) |
+| GET    | `/`                         | Public                   | List courses (`?search=&minPrice=&maxPrice=&instructor=&page=&limit=`) |
 | GET    | `/instructors`              | Public                   | Instructors that have courses (for filters)      |
 | GET    | `/my`                       | student                  | Courses the logged-in student is enrolled in     |
 | GET    | `/:slug`                    | Public                   | Get course by slug                               |

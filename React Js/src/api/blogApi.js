@@ -36,6 +36,8 @@ export async function login(payload) {
 export async function getAllBlogs(params = {}) {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
+  if (params.page) query.set("page", params.page);
+  if (params.limit) query.set("limit", params.limit);
   const qs = query.toString();
   const res = await fetch(`${API_BASE}/blog/all${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),
@@ -108,6 +110,8 @@ export async function getAllCourses(params = {}) {
     query.set("maxPrice", params.maxPrice);
   }
   if (params.instructor) query.set("instructor", params.instructor);
+  if (params.page) query.set("page", params.page);
+  if (params.limit) query.set("limit", params.limit);
   const qs = query.toString();
   const res = await fetch(`${API_BASE}/course${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),

@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Pagination from "./Pagination";
 import { useAuth } from "../context/AuthContext";
 import { getAllCourses, getCourseInstructors } from "../api/blogApi";
+
+const PAGE_LIMIT = 10;
 
 const emptyFilters = {
   search: "",
@@ -16,6 +19,8 @@ function Course() {
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [instructors, setInstructors] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState(emptyFilters);
@@ -41,8 +46,13 @@ function Course() {
       setLoading(true);
       setError("");
       try {
-        const data = await getAllCourses(filters);
+        const data = await getAllCourses({
+          ...filters,
+          page,
+          limit: PAGE_LIMIT,
+        });
         setCourses(data.courses || []);
+        setPagination(data.pagination || null);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -50,7 +60,7 @@ function Course() {
       }
     };
     loadCourses();
-  }, [filters]);
+  }, [filters, page]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,6 +68,7 @@ function Course() {
 
   const handleApply = (e) => {
     e.preventDefault();
+    setPage(1);
     setFilters({
       search: form.search.trim(),
       minPrice: form.minPrice,
@@ -69,6 +80,7 @@ function Course() {
   const handleClear = () => {
     setForm(emptyFilters);
     setFilters(emptyFilters);
+    setPage(1);
   };
 
   const hasActiveFilters = Object.values(filters).some((value) => value !== "");
@@ -230,6 +242,11 @@ function Course() {
               );
             })}
           </div>
+
+          <Pagination
+            pagination={pagination}
+            onPageChange={(nextPage) => setPage(nextPage)}
+          />
         </div>
       </section>
       <Footer />
