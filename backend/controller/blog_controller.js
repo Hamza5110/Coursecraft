@@ -4,11 +4,17 @@ import { buildPagination, parsePagination } from "../utils/pagination.js";
 
 const createBlog = async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, coverImage } = req.body;
     if (!title || !content) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const blog = await Blog.create({ title, content, author: req.user.id, authorName: req.user.username });
+    const blog = await Blog.create({
+      title,
+      content,
+      coverImage: coverImage?.trim() || "",
+      author: req.user.id,
+      authorName: req.user.username,
+    });
     res.status(201).json({ success: true, message: "Blog created", blog });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -74,9 +80,10 @@ const updateBlog = async (req, res) => {
       return res.status(403).json({ success: false, message: "You can only edit your own blogs" });
     }
 
-    const { title, content } = req.body;
+    const { title, content, coverImage } = req.body;
     if(title !== undefined) blog.title = title;
     if(content !== undefined) blog.content = content;
+    if (coverImage !== undefined) blog.coverImage = String(coverImage).trim();
     await blog.save();
 
     res.status(200).json({ success: true, message: "Blog updated", blog });

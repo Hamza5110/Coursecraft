@@ -4,6 +4,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { createCourse } from "../api/blogApi";
+import ImageUploadField from "./ImageUploadField";
 
 function CreateCourse() {
   const navigate = useNavigate();
@@ -106,16 +107,10 @@ function CreateCourse() {
               required
             />
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input
-              name="image"
+            <ImageUploadField
+              label="Course cover"
               value={form.image}
-              onChange={handleChange}
-              type="url"
-              placeholder="https://example.com/course.png"
-              className="w-full border p-2 rounded mb-4"
+              onChange={(image) => setForm({ ...form, image })}
               required
             />
 

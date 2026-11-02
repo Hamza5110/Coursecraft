@@ -9,9 +9,11 @@ import {
   enrollInCourse,
   getCourseBySlug,
   getCourseLessons,
+  mediaUrl,
   unenrollFromCourse,
   updateCourse,
 } from "../api/blogApi";
+import ImageUploadField from "./ImageUploadField";
 
 function isSameId(a, b) {
   if (!a || !b) return false;
@@ -237,7 +239,7 @@ function CourseDetail() {
           {!loading && course && !editing && (
             <article className="bg-white rounded-xl shadow-lg overflow-hidden">
               <img
-                src={course.image}
+                src={mediaUrl(course.image)}
                 alt={course.title}
                 className="w-full h-56 object-cover bg-gray-200"
                 onError={(e) => {
@@ -463,15 +465,10 @@ function CourseDetail() {
                 required
               />
 
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL
-              </label>
-              <input
-                name="image"
+              <ImageUploadField
+                label="Course cover"
                 value={form.image}
-                onChange={handleChange}
-                type="url"
-                className="w-full border p-2 rounded mb-4"
+                onChange={(image) => setForm({ ...form, image })}
                 required
               />
 

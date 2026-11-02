@@ -7,7 +7,7 @@ Full-stack learning platform with a React frontend and Express + MongoDB backend
 | Layer    | Stack                                      |
 | -------- | ------------------------------------------ |
 | Frontend | React 19, Vite, React Router, Tailwind CSS |
-| Backend  | Express, Mongoose, JWT, bcryptjs           |
+| Backend  | Express, Mongoose, JWT, bcryptjs, Multer   |
 | Database | MongoDB                                    |
 
 ## Project Structure
@@ -21,9 +21,10 @@ blog-verse/
 │       └── context/          # Auth context
 └── backend/                  # Express API
     ├── controller/
-    ├── middleware/           # JWT protect + role authorize
+    ├── middleware/           # JWT protect + role authorize + Multer upload
     ├── models/               # User, Blog, Comment, Course, Lesson
     ├── routes/
+    ├── uploads/              # Local image storage (gitignored)
     ├── scripts/              # One-off migrations
     └── utils/
 ```
@@ -80,6 +81,7 @@ App runs at `http://localhost:5173`.
 - User signup and login (JWT)
 - Roles: `student`, `instructor`, `admin` (signup allows student/instructor only; set admin in the database)
 - Blog CRUD with author ownership (owner or admin can edit/delete)
+- Image upload for blog/course covers (Multer → `backend/uploads`, served at `/uploads`)
 - Blog likes / bookmarks (`likedBy` user IDs; toggle like; Liked page)
 - Blog comments (post comments; delete own; admin can moderate)
 - Search blogs by title
@@ -154,6 +156,12 @@ App runs at `http://localhost:5173`.
 | POST   | `/:slug/lessons`            | course instructor, admin | Create lesson                                    |
 | PUT    | `/:slug/lessons/:lessonId`  | course instructor, admin | Update lesson                                    |
 | DELETE | `/:slug/lessons/:lessonId`  | course instructor, admin | Delete lesson                                    |
+
+### Upload — `/api/upload`
+
+| Method | Path | Access | Description |
+| ------ | ---- | ------ | ----------- |
+| POST   | `/`  | auth   | Upload an image (`multipart/form-data`, field name `image`). Returns `{ url: "/uploads/..." }` (max 5MB; jpeg/png/webp/gif). Files are stored in `backend/uploads` and served at `http://localhost:5000/uploads/...`. You can still paste an external image URL in course/blog forms. |
 
 ### Users — `/api/user`
 

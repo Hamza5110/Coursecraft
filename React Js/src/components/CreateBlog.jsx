@@ -4,11 +4,12 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { createBlog } from "../api/blogApi";
+import ImageUploadField from "./ImageUploadField";
 
 function CreateBlog() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [form, setForm] = useState({ title: "", content: "" });
+  const [form, setForm] = useState({ title: "", content: "", coverImage: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,6 +25,7 @@ function CreateBlog() {
       await createBlog({
         title: form.title.trim(),
         content: form.content.trim(),
+        coverImage: form.coverImage.trim(),
       });
       navigate("/");
     } catch (err) {
@@ -75,6 +77,12 @@ function CreateBlog() {
               rows={10}
               className="w-full border p-2 rounded mb-4 resize-y"
               required
+            />
+
+            <ImageUploadField
+              label="Cover image"
+              value={form.coverImage}
+              onChange={(coverImage) => setForm({ ...form, coverImage })}
             />
 
             <p className="text-sm text-gray-500 mb-4">

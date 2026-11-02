@@ -5,6 +5,10 @@ node_modules/
 dist/
 dist-ssr/
 
+# uploaded media
+backend/uploads/
+!backend/uploads/.gitkeep
+
 # env / secrets — DO NOT COMMIT
 .env
 .env.*

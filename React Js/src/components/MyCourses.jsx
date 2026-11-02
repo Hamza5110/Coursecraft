@@ -3,7 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
-import { getMyCourses, unenrollFromCourse } from "../api/blogApi";
+import { getMyCourses, mediaUrl, unenrollFromCourse } from "../api/blogApi";
 
 function MyCourses() {
   const { user } = useAuth();
@@ -104,7 +104,7 @@ function MyCourses() {
                   className="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 border border-gray-200 overflow-hidden flex flex-col"
                 >
                   <img
-                    src={course.image}
+                    src={mediaUrl(course.image)}
                     alt={course.title}
                     className="w-full h-40 object-cover bg-gray-200"
                     onError={(e) => {

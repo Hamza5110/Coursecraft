@@ -18,6 +18,11 @@ const blogSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    coverImage: {
+        type: String,
+        default: "",
+        trim: true,
+    },
     likedBy: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

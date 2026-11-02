@@ -66,6 +66,7 @@ function LikedBlogs() {
                 body={blog.content}
                 authorName={blog.authorName || blog.author?.username}
                 likesCount={blog.likedBy?.length || 0}
+                coverImage={blog.coverImage}
               />
             ))}
           </div>

@@ -1,4 +1,11 @@
-const API_BASE = "http://localhost:5000/api";
+const API_ORIGIN = "http://localhost:5000";
+const API_BASE = `${API_ORIGIN}/api`;
+
+export function mediaUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 function authHeaders() {
   const token = localStorage.getItem("token");
@@ -8,11 +15,29 @@ function authHeaders() {
   };
 }
 
+function authHeadersMultipart() {
+  const token = localStorage.getItem("token");
+  return {
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
 async function handleResponse(res) {
   if (res.status === 204) return null;
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Request failed");
   return data;
+}
+
+export async function uploadImage(file) {
+  const body = new FormData();
+  body.append("image", file);
+  const res = await fetch(`${API_BASE}/upload`, {
+    method: "POST",
+    headers: authHeadersMultipart(),
+    body,
+  });
+  return handleResponse(res);
 }
 
 export async function signup(payload) {

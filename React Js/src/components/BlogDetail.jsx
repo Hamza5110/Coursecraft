@@ -9,9 +9,11 @@ import {
   deleteComment,
   getBlogById,
   getBlogComments,
+  mediaUrl,
   toggleBlogLike,
   updateBlog,
 } from "../api/blogApi";
+import ImageUploadField from "./ImageUploadField";
 
 function BlogDetail() {
   const { id } = useParams();
@@ -19,7 +21,7 @@ function BlogDetail() {
   const { user } = useAuth();
 
   const [blog, setBlog] = useState(null);
-  const [form, setForm] = useState({ title: "", content: "" });
+  const [form, setForm] = useState({ title: "", content: "", coverImage: "" });
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,6 +45,7 @@ function BlogDetail() {
         setForm({
           title: data.blog.title,
           content: data.blog.content,
+          coverImage: data.blog.coverImage || "",
         });
       } catch (err) {
         setError(err.message);
@@ -91,6 +94,7 @@ function BlogDetail() {
       const data = await updateBlog(id, {
         title: form.title.trim(),
         content: form.content.trim(),
+        coverImage: form.coverImage.trim(),
       });
       setBlog(data.blog);
       setEditing(false);
@@ -186,55 +190,67 @@ function BlogDetail() {
           {error && <p className="text-red-500 mb-4">{error}</p>}
 
           {!loading && blog && !editing && (
-            <article className="bg-white p-6 rounded-xl shadow-lg">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {blog.title}
-              </h1>
-              <p className="text-sm text-gray-500 mb-6">
-                By {blog.authorName || blog.author?.username || "Unknown"}
-                {blog.createdAt &&
-                  ` · ${new Date(blog.createdAt).toLocaleDateString()}`}
-              </p>
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed mb-8">
-                {blog.content}
-              </p>
+            <article className="bg-white rounded-xl shadow-lg overflow-hidden">
+              {blog.coverImage && (
+                <img
+                  src={mediaUrl(blog.coverImage)}
+                  alt={blog.title}
+                  className="w-full h-56 object-cover bg-gray-200"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              )}
+              <div className="p-6">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {blog.title}
+                </h1>
+                <p className="text-sm text-gray-500 mb-6">
+                  By {blog.authorName || blog.author?.username || "Unknown"}
+                  {blog.createdAt &&
+                    ` · ${new Date(blog.createdAt).toLocaleDateString()}`}
+                </p>
+                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed mb-8">
+                  {blog.content}
+                </p>
 
-              <div className="flex flex-wrap gap-3 mb-2">
-                <button
-                  type="button"
-                  onClick={handleToggleLike}
-                  disabled={liking}
-                  className={`px-4 py-2 rounded-lg disabled:opacity-60 ${
-                    liked
-                      ? "bg-rose-500 hover:bg-rose-600 text-white"
-                      : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-                  }`}
-                >
-                  {liking
-                    ? "Updating..."
-                    : liked
-                      ? `Liked · ${likesCount}`
-                      : `Like · ${likesCount}`}
-                </button>
-                {canManage && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setEditing(true)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      disabled={saving}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-60"
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
+                <div className="flex flex-wrap gap-3 mb-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleLike}
+                    disabled={liking}
+                    className={`px-4 py-2 rounded-lg disabled:opacity-60 ${
+                      liked
+                        ? "bg-rose-500 hover:bg-rose-600 text-white"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                    }`}
+                  >
+                    {liking
+                      ? "Updating..."
+                      : liked
+                        ? `Liked · ${likesCount}`
+                        : `Like · ${likesCount}`}
+                  </button>
+                  {canManage && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditing(true)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={saving}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-60"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </article>
           )}
@@ -269,6 +285,12 @@ function BlogDetail() {
                 required
               />
 
+              <ImageUploadField
+                label="Cover image"
+                value={form.coverImage}
+                onChange={(coverImage) => setForm({ ...form, coverImage })}
+              />
+
               <div className="flex gap-3">
                 <button
                   type="submit"
@@ -284,6 +306,7 @@ function BlogDetail() {
                     setForm({
                       title: blog.title,
                       content: blog.content,
+                      coverImage: blog.coverImage || "",
                     });
                   }}
                   className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"

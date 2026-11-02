@@ -4,7 +4,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Pagination from "./Pagination";
 import { useAuth } from "../context/AuthContext";
-import { getAllCourses, getCourseInstructors } from "../api/blogApi";
+import { getAllCourses, getCourseInstructors, mediaUrl } from "../api/blogApi";
 
 const PAGE_LIMIT = 10;
 
@@ -210,7 +210,7 @@ function Course() {
                   className="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 border border-gray-200 overflow-hidden flex flex-col"
                 >
                   <img
-                    src={course.image}
+                    src={mediaUrl(course.image)}
                     alt={course.title}
                     className="w-full h-40 object-cover bg-gray-200"
                     onError={(e) => {
