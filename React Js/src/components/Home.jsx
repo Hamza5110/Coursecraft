@@ -125,6 +125,7 @@ function Home() {
                 title={blog.title}
                 body={blog.content}
                 authorName={blog.authorName || blog.author?.username}
+                likesCount={blog.likedBy?.length || 0}
               />
             ))}
           </div>

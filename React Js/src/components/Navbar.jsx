@@ -71,6 +71,9 @@ function Navbar() {
             <NavLink to="/blogs/new" className={linkClass}>
               Create Blog
             </NavLink>
+            <NavLink to="/blogs/liked" className={linkClass}>
+              Liked
+            </NavLink>
             {canCreateCourse && (
               <NavLink to="/courses/new" className={linkClass}>
                 Create Course
@@ -193,6 +196,9 @@ function Navbar() {
           )}
           <NavLink to="/blogs/new" className={linkClass} onClick={closeMenus}>
             Create Blog
+          </NavLink>
+          <NavLink to="/blogs/liked" className={linkClass} onClick={closeMenus}>
+            Liked
           </NavLink>
           {canCreateCourse && (
             <NavLink

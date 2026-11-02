@@ -80,6 +80,7 @@ App runs at `http://localhost:5173`.
 - User signup and login (JWT)
 - Roles: `student`, `instructor`, `admin` (signup allows student/instructor only; set admin in the database)
 - Blog CRUD with author ownership (owner or admin can edit/delete)
+- Blog likes / bookmarks (`likedBy` user IDs; toggle like; Liked page)
 - Blog comments (post comments; delete own; admin can moderate)
 - Search blogs by title
 - Pagination for blogs and courses (`?page=1&limit=10`)
@@ -101,7 +102,8 @@ App runs at `http://localhost:5173`.
 | `/signup`                           | Sign up                  | No   |                                |
 | `/`                                 | Home / blogs + search    | Yes  |                                |
 | `/blogs/new`                        | Create blog              | Yes  |                                |
-| `/blogs/:id`                        | Blog detail + comments   | Yes  |                                |
+| `/blogs/liked`                      | Liked / bookmarked blogs | Yes  |                                |
+| `/blogs/:id`                        | Blog detail + comments   | Yes  | Like / unlike                  |
 | `/courses`                          | Course list + filters    | Yes  |                                |
 | `/my-courses`                       | Enrolled courses         | Yes  | Students                       |
 | `/courses/new`                      | Create course            | Yes  | Instructor / admin             |
@@ -124,10 +126,12 @@ App runs at `http://localhost:5173`.
 | Method | Path                         | Access        | Description                          |
 | ------ | ---------------------------- | ------------- | ------------------------------------ |
 | GET    | `/all`                       | Public        | List blogs (`?search=&page=&limit=`) |
+| GET    | `/liked`                     | auth          | Blogs liked by the current user      |
 | GET    | `/:id`                       | Public        | Get one blog                         |
 | POST   | `/create`                    | auth          | Create a blog                        |
 | PUT    | `/:id`                       | owner, admin  | Update a blog                        |
 | DELETE | `/:id`                       | owner, admin  | Delete a blog (+ its comments)       |
+| POST   | `/:id/like`                  | auth          | Toggle like / bookmark               |
 | GET    | `/:id/comments`              | Public        | List comments                        |
 | POST   | `/:id/comments`              | auth          | Add a comment                        |
 | DELETE | `/:id/comments/:commentId`   | owner, admin  | Delete a comment                     |

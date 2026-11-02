@@ -9,6 +9,7 @@ import {
   deleteComment,
   getBlogById,
   getBlogComments,
+  toggleBlogLike,
   updateBlog,
 } from "../api/blogApi";
 
@@ -30,6 +31,7 @@ function BlogDetail() {
   const [commentText, setCommentText] = useState("");
   const [savingComment, setSavingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [liking, setLiking] = useState(false);
 
   useEffect(() => {
     const loadBlog = async () => {
@@ -71,6 +73,11 @@ function BlogDetail() {
     blog && String(blog.author?._id || blog.author) === String(user?.id);
   const isAdmin = user?.role === "admin";
   const canManage = isOwner || isAdmin;
+  const likesCount = blog?.likedBy?.length || 0;
+  const liked =
+    blog?.likedBy?.some(
+      (id) => String(id?._id || id) === String(user?.id),
+    ) || false;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -106,6 +113,19 @@ function BlogDetail() {
     } catch (err) {
       setError(err.message);
       setSaving(false);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    setLiking(true);
+    setError("");
+    try {
+      const data = await toggleBlogLike(id);
+      setBlog(data.blog);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLiking(false);
     }
   };
 
@@ -179,25 +199,43 @@ function BlogDetail() {
                 {blog.content}
               </p>
 
-              {canManage && (
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={saving}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-60"
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
+              <div className="flex flex-wrap gap-3 mb-2">
+                <button
+                  type="button"
+                  onClick={handleToggleLike}
+                  disabled={liking}
+                  className={`px-4 py-2 rounded-lg disabled:opacity-60 ${
+                    liked
+                      ? "bg-rose-500 hover:bg-rose-600 text-white"
+                      : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                  }`}
+                >
+                  {liking
+                    ? "Updating..."
+                    : liked
+                      ? `Liked · ${likesCount}`
+                      : `Like · ${likesCount}`}
+                </button>
+                {canManage && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={saving}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-60"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </div>
             </article>
           )}
 

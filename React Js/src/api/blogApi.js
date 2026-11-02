@@ -73,6 +73,25 @@ export async function deleteBlog(id) {
   return handleResponse(res);
 }
 
+export async function toggleBlogLike(id) {
+  const res = await fetch(`${API_BASE}/blog/${id}/like`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function getLikedBlogs(params = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", params.page);
+  if (params.limit) query.set("limit", params.limit);
+  const qs = query.toString();
+  const res = await fetch(`${API_BASE}/blog/liked${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(),
+  });
+  return handleResponse(res);
+}
+
 export async function getBlogComments(blogId) {
   const res = await fetch(`${API_BASE}/blog/${blogId}/comments`, {
     headers: authHeaders(),

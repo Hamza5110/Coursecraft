@@ -6,6 +6,8 @@ import {
   getBlogById,
   updateBlog,
   deleteBlog,
+  toggleBlogLike,
+  getLikedBlogs,
 } from "../controller/blog_controller.js";
 import {
   getCommentsByBlog,
@@ -16,10 +18,12 @@ import {
 const router = express.Router();
 
 router.get("/all", getAllBlogs);
+router.get("/liked", protect, getLikedBlogs);
 
 router.get("/:id/comments", getCommentsByBlog);
 router.post("/:id/comments", protect, createComment);
 router.delete("/:id/comments/:commentId", protect, deleteComment);
+router.post("/:id/like", protect, toggleBlogLike);
 
 router.get("/:id", getBlogById);
 router.post("/create", protect, createBlog);

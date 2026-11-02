@@ -106,4 +106,69 @@ const deleteBlog = async (req, res) => {
   }
 };
 
-export { createBlog, getAllBlogs, getBlogById, updateBlog, deleteBlog };
+const toggleBlogLike = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+    }
+
+    const userId = req.user._id;
+    const alreadyLiked = blog.likedBy.some((id) => id.equals(userId));
+
+    if (alreadyLiked) {
+      blog.likedBy.pull(userId);
+    } else {
+      blog.likedBy.push(userId);
+    }
+
+    await blog.save();
+
+    const liked = !alreadyLiked;
+    res.status(200).json({
+      success: true,
+      message: liked ? "Blog liked" : "Blog unliked",
+      liked,
+      likesCount: blog.likedBy.length,
+      blog,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+const getLikedBlogs = async (req, res) => {
+  try {
+    const { page, limit, skip } = parsePagination(req.query);
+    const filter = { likedBy: req.user._id };
+
+    const [blogs, total] = await Promise.all([
+      Blog.find(filter)
+        .populate("author", "username email")
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Blog.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      blogs,
+      pagination: buildPagination({ page, limit, total }),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export {
+  createBlog,
+  getAllBlogs,
+  getBlogById,
+  updateBlog,
+  deleteBlog,
+  toggleBlogLike,
+  getLikedBlogs,
+};
