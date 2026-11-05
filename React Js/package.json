@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.105.3",
+    "dompurify": "^3.4.17",
+    "isomorphic-dompurify": "^4.6.0",
     "quill": "^2.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api/blogApi";
+import Alert from "./ui/Alert";
+import Button from "./ui/Button";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -27,35 +29,41 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-slate-100">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-blue-50 px-4 py-10">
       <form
         onSubmit={handleSubmit}
-        className="bg-white w-80 p-6 rounded-xl shadow-lg"
+        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg"
       >
-        <h2 className="text-2xl font-bold text-center mb-2">Forgot password</h2>
-        <p className="text-sm text-gray-500 text-center mb-5">
+        <h1 className="mb-2 text-center font-display text-2xl font-bold">
+          Forgot password
+        </h1>
+        <p className="mb-5 text-center text-sm text-gray-500">
           Enter your email and we&apos;ll send a reset link.
         </p>
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-        {message && <p className="text-green-600 text-sm mb-3">{message}</p>}
+        {error && <Alert className="mb-3">{error}</Alert>}
+        {message && (
+          <Alert type="success" className="mb-3">
+            {message}
+          </Alert>
+        )}
+        <label htmlFor="forgot-email" className="mb-1 block text-sm font-medium">
+          Email
+        </label>
         <input
-          name="email"
+          id="forgot-email"
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          type="email"
-          placeholder="Email"
-          className="w-full border p-2 rounded mb-4"
+          autoComplete="email"
+          className="mb-4 w-full rounded-lg border border-gray-200 p-2"
           required
         />
-        <button
-          disabled={loading}
-          className="bg-blue-500 text-white rounded-md px-4 w-full py-2 hover:bg-blue-600 disabled:opacity-60"
-        >
-          {loading ? "Sending..." : "Send reset link"}
-        </button>
-        <p className="text-center mt-3 text-sm">
-          <Link className="text-blue-600 hover:underline" to="/login">
-            Back to Login
+        <Button type="submit" className="w-full" loading={loading}>
+          Send reset link
+        </Button>
+        <p className="mt-3 text-center text-sm">
+          <Link className="text-blue-700 hover:underline" to="/login">
+            Back to login
           </Link>
         </p>
       </form>

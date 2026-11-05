@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import Card from "./Card";
 import Pagination from "./Pagination";
 import { getLikedBlogs } from "../api/blogApi";
@@ -34,7 +32,6 @@ function LikedBlogs() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -63,9 +60,10 @@ function LikedBlogs() {
                 key={blog._id}
                 id={blog._id}
                 title={blog.title}
+                excerpt={blog.excerpt}
                 body={blog.content}
                 authorName={blog.authorName || blog.author?.username}
-                likesCount={blog.likedBy?.length || 0}
+                likesCount={blog.likesCount ?? 0}
                 coverImage={blog.coverImage}
               />
             ))}
@@ -77,7 +75,6 @@ function LikedBlogs() {
           />
         </div>
       </section>
-      <Footer />
     </>
   );
 }

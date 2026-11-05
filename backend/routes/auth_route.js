@@ -5,12 +5,16 @@ import {
   forgotPassword,
   resetPassword,
 } from "../controller/auth_controller.js";
+import {
+  authLimiter,
+  forgotPasswordLimiter,
+} from "../middleware/rate_limit.js";
 
 const router = express.Router();
 
-router.post("/signup", signup);
-router.post("/login", login);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+router.post("/signup", authLimiter, signup);
+router.post("/login", authLimiter, login);
+router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
+router.post("/reset-password", authLimiter, resetPassword);
 
 export default router;

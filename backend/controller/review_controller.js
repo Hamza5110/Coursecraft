@@ -26,7 +26,9 @@ async function syncCourseRating(courseId) {
 
 export const getReviewsByCourse = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug)
+      .select("averageRating reviewCount")
+      .lean();
     if (!course) {
       return res
         .status(404)
@@ -34,8 +36,10 @@ export const getReviewsByCourse = async (req, res) => {
     }
 
     const reviews = await Review.find({ course: course._id })
-      .populate("author", "username email role")
-      .sort({ createdAt: -1 });
+      .populate("author", "username")
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -43,14 +47,18 @@ export const getReviewsByCourse = async (req, res) => {
       averageRating: course.averageRating || 0,
       reviewCount: course.reviewCount || 0,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch reviews" });
   }
 };
 
 export const createReview = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug).select(
+      "students",
+    );
     if (!course) {
       return res
         .status(404)
@@ -74,16 +82,19 @@ export const createReview = async (req, res) => {
     }
 
     const content =
-      typeof req.body.content === "string" ? req.body.content.trim() : "";
+      typeof req.body.content === "string"
+        ? req.body.content.trim().slice(0, 2000)
+        : "";
 
-    const existing = await Review.findOne({
+    const existing = await Review.exists({
       course: course._id,
       author: req.user._id,
     });
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: "You already reviewed this course. Update your review instead.",
+        message:
+          "You already reviewed this course. Update your review instead.",
       });
     }
 
@@ -96,15 +107,12 @@ export const createReview = async (req, res) => {
     });
 
     const stats = await syncCourseRating(course._id);
-    const populated = await Review.findById(review._id).populate(
-      "author",
-      "username email role",
-    );
+    await review.populate("author", "username");
 
     res.status(201).json({
       success: true,
       message: "Review added",
-      review: populated,
+      review,
       ...stats,
     });
   } catch (err) {
@@ -114,13 +122,13 @@ export const createReview = async (req, res) => {
         message: "You already reviewed this course",
       });
     }
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: "Failed to create review" });
   }
 };
 
 export const updateReview = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug).select("_id");
     if (!course) {
       return res
         .status(404)
@@ -154,30 +162,29 @@ export const updateReview = async (req, res) => {
 
     if (req.body.content !== undefined) {
       review.content =
-        typeof req.body.content === "string" ? req.body.content.trim() : "";
+        typeof req.body.content === "string"
+          ? req.body.content.trim().slice(0, 2000)
+          : "";
     }
 
     await review.save();
     const stats = await syncCourseRating(course._id);
-    const populated = await Review.findById(review._id).populate(
-      "author",
-      "username email role",
-    );
+    await review.populate("author", "username");
 
     res.status(200).json({
       success: true,
       message: "Review updated",
-      review: populated,
+      review,
       ...stats,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to update review" });
   }
 };
 
 export const deleteReview = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug).select("_id");
     if (!course) {
       return res
         .status(404)
@@ -208,7 +215,7 @@ export const deleteReview = async (req, res) => {
       message: "Review deleted",
       ...stats,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to delete review" });
   }
 };

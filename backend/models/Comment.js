@@ -6,7 +6,6 @@ const commentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Blog",
       required: true,
-      index: true,
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
@@ -27,6 +26,8 @@ const commentSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+commentSchema.index({ blog: 1, createdAt: -1 });
 
 const Comment = mongoose.model("Comment", commentSchema);
 

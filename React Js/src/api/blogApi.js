@@ -1,16 +1,43 @@
-const API_ORIGIN = "http://localhost:5000";
+const API_ORIGIN =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
 const API_BASE = `${API_ORIGIN}/api`;
+
+let onUnauthorized = null;
+
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler;
+}
 
 export function mediaUrl(path) {
   if (!path) return "";
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+  const value = String(path).trim();
+  if (!value) return "";
+
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const url = new URL(value);
+      if (url.protocol === "http:" || url.protocol === "https:") return value;
+    } catch {
+      return "";
+    }
+    return "";
+  }
+
+  if (value.startsWith("/uploads/") && !value.includes("..")) {
+    return `${API_ORIGIN}${value}`;
+  }
+
+  if (value.startsWith("/") && !value.includes("..")) {
+    return `${API_ORIGIN}${value}`;
+  }
+
+  return "";
 }
 
-function authHeaders() {
+function authHeaders(hasBody = false) {
   const token = localStorage.getItem("token");
   return {
-    "Content-Type": "application/json",
+    ...(hasBody ? { "Content-Type": "application/json" } : {}),
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 }
@@ -22,11 +49,60 @@ function authHeadersMultipart() {
   };
 }
 
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function handleResponse(res) {
+  if (res.status === 401) {
+    onUnauthorized?.();
+  }
+
   if (res.status === 204) return null;
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
+
+  let data = null;
+  const text = await res.text();
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new ApiError(
+        res.ok ? "Invalid server response" : "Request failed",
+        res.status,
+      );
+    }
+  }
+
+  if (!res.ok) {
+    throw new ApiError(data?.message || "Request failed", res.status);
+  }
   return data;
+}
+
+async function request(path, { method = "GET", body, signal } = {}) {
+  const hasBody = body !== undefined;
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: authHeaders(hasBody),
+    body: hasBody ? JSON.stringify(body) : undefined,
+    signal,
+  });
+  return handleResponse(res);
+}
+
+function toQuery(params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, value);
+    }
+  });
+  const qs = query.toString();
+  return qs ? `?${qs}` : "";
 }
 
 export async function uploadImage(file) {
@@ -40,339 +116,85 @@ export async function uploadImage(file) {
   return handleResponse(res);
 }
 
-export async function signup(payload) {
-  const res = await fetch(`${API_BASE}/auth/signup`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
+export const signup = (payload) => request("/auth/signup", { method: "POST", body: payload });
+export const login = (payload) => request("/auth/login", { method: "POST", body: payload });
+export const forgotPassword = (payload) =>
+  request("/auth/forgot-password", { method: "POST", body: payload });
+export const resetPassword = (payload) =>
+  request("/auth/reset-password", { method: "POST", body: payload });
 
-export async function login(payload) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
+export const getAllBlogs = (params = {}, signal) =>
+  request(`/blog/all${toQuery(params)}`, { signal });
+export const getBlogById = (id, signal) => request(`/blog/${id}`, { signal });
+export const createBlog = (payload) =>
+  request("/blog/create", { method: "POST", body: payload });
+export const updateBlog = (id, payload) =>
+  request(`/blog/${id}`, { method: "PUT", body: payload });
+export const deleteBlog = (id) => request(`/blog/${id}`, { method: "DELETE" });
+export const toggleBlogLike = (id) =>
+  request(`/blog/${id}/like`, { method: "POST" });
+export const getLikedBlogs = (params = {}, signal) =>
+  request(`/blog/liked${toQuery(params)}`, { signal });
 
-export async function forgotPassword(payload) {
-  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
+export const getBlogComments = (blogId, signal) =>
+  request(`/blog/${blogId}/comments`, { signal });
+export const createComment = (blogId, payload) =>
+  request(`/blog/${blogId}/comments`, { method: "POST", body: payload });
+export const deleteComment = (blogId, commentId) =>
+  request(`/blog/${blogId}/comments/${commentId}`, { method: "DELETE" });
 
-export async function resetPassword(payload) {
-  const res = await fetch(`${API_BASE}/auth/reset-password`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
+export const getAllCourses = (params = {}, signal) =>
+  request(`/course${toQuery(params)}`, { signal });
+export const getCourseInstructors = (signal) =>
+  request("/course/instructors", { signal });
+export const getMyCourses = (signal) => request("/course/my", { signal });
+export const getTeachingCourses = (signal) =>
+  request("/course/teaching", { signal });
+export const getCourseBySlug = (slug, signal) =>
+  request(`/course/${slug}`, { signal });
+export const createCourse = (payload) =>
+  request("/course", { method: "POST", body: payload });
+export const updateCourse = (slug, payload) =>
+  request(`/course/${slug}`, { method: "PUT", body: payload });
+export const deleteCourse = (slug) =>
+  request(`/course/${slug}`, { method: "DELETE" });
+export const enrollInCourse = (slug) =>
+  request(`/course/${slug}/enroll`, { method: "POST" });
+export const unenrollFromCourse = (slug) =>
+  request(`/course/${slug}/unenroll`, { method: "POST" });
 
-export async function getAllBlogs(params = {}) {
-  const query = new URLSearchParams();
-  if (params.search) query.set("search", params.search);
-  if (params.page) query.set("page", params.page);
-  if (params.limit) query.set("limit", params.limit);
-  const qs = query.toString();
-  const res = await fetch(`${API_BASE}/blog/all${qs ? `?${qs}` : ""}`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getBlogById(id) {
-  const res = await fetch(`${API_BASE}/blog/${id}`, { headers: authHeaders() });
-  return handleResponse(res);
-}
-
-export async function createBlog(payload) {
-  const res = await fetch(`${API_BASE}/blog/create`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function updateBlog(id, payload) {
-  const res = await fetch(`${API_BASE}/blog/${id}`, {
+export const getCourseLessons = (slug, signal) =>
+  request(`/course/${slug}/lessons`, { signal });
+export const getCourseReviews = (slug, signal) =>
+  request(`/course/${slug}/reviews`, { signal });
+export const createCourseReview = (slug, payload) =>
+  request(`/course/${slug}/reviews`, { method: "POST", body: payload });
+export const updateCourseReview = (slug, reviewId, payload) =>
+  request(`/course/${slug}/reviews/${reviewId}`, {
     method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+    body: payload,
   });
-  return handleResponse(res);
-}
+export const deleteCourseReview = (slug, reviewId) =>
+  request(`/course/${slug}/reviews/${reviewId}`, { method: "DELETE" });
 
-export async function deleteBlog(id) {
-  const res = await fetch(`${API_BASE}/blog/${id}`, { method: "DELETE", headers: authHeaders() });
-  return handleResponse(res);
-}
-
-export async function toggleBlogLike(id) {
-  const res = await fetch(`${API_BASE}/blog/${id}/like`, {
-    method: "POST",
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getLikedBlogs(params = {}) {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", params.page);
-  if (params.limit) query.set("limit", params.limit);
-  const qs = query.toString();
-  const res = await fetch(`${API_BASE}/blog/liked${qs ? `?${qs}` : ""}`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getBlogComments(blogId) {
-  const res = await fetch(`${API_BASE}/blog/${blogId}/comments`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function createComment(blogId, payload) {
-  const res = await fetch(`${API_BASE}/blog/${blogId}/comments`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function deleteComment(blogId, commentId) {
-  const res = await fetch(
-    `${API_BASE}/blog/${blogId}/comments/${commentId}`,
-    {
-      method: "DELETE",
-      headers: authHeaders(),
-    },
-  );
-  return handleResponse(res);
-}
-
-export async function getAllCourses(params = {}) {
-  const query = new URLSearchParams();
-  if (params.search) query.set("search", params.search);
-  if (params.minPrice !== undefined && params.minPrice !== "") {
-    query.set("minPrice", params.minPrice);
-  }
-  if (params.maxPrice !== undefined && params.maxPrice !== "") {
-    query.set("maxPrice", params.maxPrice);
-  }
-  if (params.instructor) query.set("instructor", params.instructor);
-  if (params.page) query.set("page", params.page);
-  if (params.limit) query.set("limit", params.limit);
-  const qs = query.toString();
-  const res = await fetch(`${API_BASE}/course${qs ? `?${qs}` : ""}`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getCourseInstructors() {
-  const res = await fetch(`${API_BASE}/course/instructors`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getMyCourses() {
-  const res = await fetch(`${API_BASE}/course/my`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getTeachingCourses() {
-  const res = await fetch(`${API_BASE}/course/teaching`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getCourseBySlug(slug) {
-  const res = await fetch(`${API_BASE}/course/${slug}`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function createCourse(payload) {
-  const res = await fetch(`${API_BASE}/course`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function updateCourse(slug, payload) {
-  const res = await fetch(`${API_BASE}/course/${slug}`, {
+export const getLesson = (slug, lessonId, signal) =>
+  request(`/course/${slug}/lessons/${lessonId}`, { signal });
+export const createLesson = (slug, payload) =>
+  request(`/course/${slug}/lessons`, { method: "POST", body: payload });
+export const updateLesson = (slug, lessonId, payload) =>
+  request(`/course/${slug}/lessons/${lessonId}`, {
     method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+    body: payload,
   });
-  return handleResponse(res);
-}
+export const deleteLesson = (slug, lessonId) =>
+  request(`/course/${slug}/lessons/${lessonId}`, { method: "DELETE" });
 
-export async function deleteCourse(slug) {
-  const res = await fetch(`${API_BASE}/course/${slug}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function enrollInCourse(slug) {
-  const res = await fetch(`${API_BASE}/course/${slug}/enroll`, {
-    method: "POST",
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function unenrollFromCourse(slug) {
-  const res = await fetch(`${API_BASE}/course/${slug}/unenroll`, {
-    method: "POST",
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getCourseLessons(slug) {
-  const res = await fetch(`${API_BASE}/course/${slug}/lessons`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getCourseReviews(slug) {
-  const res = await fetch(`${API_BASE}/course/${slug}/reviews`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function createCourseReview(slug, payload) {
-  const res = await fetch(`${API_BASE}/course/${slug}/reviews`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function updateCourseReview(slug, reviewId, payload) {
-  const res = await fetch(
-    `${API_BASE}/course/${slug}/reviews/${reviewId}`,
-    {
-      method: "PUT",
-      headers: authHeaders(),
-      body: JSON.stringify(payload),
-    },
-  );
-  return handleResponse(res);
-}
-
-export async function deleteCourseReview(slug, reviewId) {
-  const res = await fetch(
-    `${API_BASE}/course/${slug}/reviews/${reviewId}`,
-    {
-      method: "DELETE",
-      headers: authHeaders(),
-    },
-  );
-  return handleResponse(res);
-}
-
-export async function getLesson(slug, lessonId) {
-  const res = await fetch(`${API_BASE}/course/${slug}/lessons/${lessonId}`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function createLesson(slug, payload) {
-  const res = await fetch(`${API_BASE}/course/${slug}/lessons`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function updateLesson(slug, lessonId, payload) {
-  const res = await fetch(`${API_BASE}/course/${slug}/lessons/${lessonId}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function deleteLesson(slug, lessonId) {
-  const res = await fetch(`${API_BASE}/course/${slug}/lessons/${lessonId}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getUser(id) {
-  const res = await fetch(`${API_BASE}/user/${id}`, {
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
-
-export async function getAllUsers() {
-  const res = await fetch(`${API_BASE}/user`, { headers: authHeaders() });
-  return handleResponse(res);
-}
-
-export async function updateUser(id, payload) {
-  const res = await fetch(`${API_BASE}/user/${id}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function changePassword(id, payload) {
-  const res = await fetch(`${API_BASE}/user/${id}/password`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-}
-
-export async function updateUserRole(id, role) {
-  const res = await fetch(`${API_BASE}/user/${id}/role`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify({ role }),
-  });
-  return handleResponse(res);
-}
-
-export async function deleteUser(id) {
-  const res = await fetch(`${API_BASE}/user/${id}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  return handleResponse(res);
-}
+export const getUser = (id) => request(`/user/${id}`);
+export const getAllUsers = () => request("/user");
+export const updateUser = (id, payload) =>
+  request(`/user/${id}`, { method: "PUT", body: payload });
+export const changePassword = (id, payload) =>
+  request(`/user/${id}/password`, { method: "PUT", body: payload });
+export const updateUserRole = (id, role) =>
+  request(`/user/${id}/role`, { method: "PUT", body: { role } });
+export const deleteUser = (id) => request(`/user/${id}`, { method: "DELETE" });

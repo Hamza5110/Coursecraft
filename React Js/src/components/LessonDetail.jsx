@@ -1,31 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-import { useAuth } from "../context/AuthContext";
 import {
   deleteLesson,
-  getCourseBySlug,
   getLesson,
   updateLesson,
 } from "../api/blogApi";
 import RichTextEditor from "./RichTextEditor";
 import RichTextContent from "./RichTextContent";
 import { isEmptyHtml } from "../utils/html";
-
-function isSameId(a, b) {
-  if (!a || !b) return false;
-  const left = typeof a === "object" ? a._id || a.id : a;
-  const right = typeof b === "object" ? b._id || b.id : b;
-  return String(left) === String(right);
-}
+import { isSafeHttpUrl } from "../utils/ids";
 
 function LessonDetail() {
   const { slug, lessonId } = useParams();
-  const { user } = useAuth();
 
-  const [course, setCourse] = useState(null);
+  const [courseTitle, setCourseTitle] = useState("");
   const [lesson, setLesson] = useState(null);
+  const [canManage, setCanManage] = useState(false);
   const [form, setForm] = useState({
     title: "",
     content: "",
@@ -39,24 +29,15 @@ function LessonDetail() {
   const [message, setMessage] = useState("");
   const [deleted, setDeleted] = useState(false);
 
-  const isAdmin = user?.role === "admin";
-  const isOwner =
-    course &&
-    (isSameId(course.instructor, user?.id) ||
-      isSameId(course.instructor?._id, user?.id));
-  const canManage = isAdmin || (user?.role === "instructor" && isOwner);
-
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError("");
       try {
-        const [courseData, lessonData] = await Promise.all([
-          getCourseBySlug(slug),
-          getLesson(slug, lessonId),
-        ]);
-        setCourse(courseData.course);
+        const lessonData = await getLesson(slug, lessonId);
         setLesson(lessonData.lesson);
+        setCourseTitle(lessonData.courseTitle || "");
+        setCanManage(Boolean(lessonData.canManage));
         setForm({
           title: lessonData.lesson.title,
           content: lessonData.lesson.content,
@@ -123,7 +104,6 @@ function LessonDetail() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-3xl mx-auto px-4">
           <Link
@@ -141,19 +121,19 @@ function LessonDetail() {
             <article className="bg-white p-6 rounded-xl shadow-lg">
               <p className="text-sm text-gray-500 mb-1">
                 Lesson {lesson.order}
-                {course?.title ? ` · ${course.title}` : ""}
+                {courseTitle ? ` · ${courseTitle}` : ""}
               </p>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
                 {lesson.title}
               </h1>
 
-              {lesson.videoUrl && (
+              {isSafeHttpUrl(lesson.videoUrl) && (
                 <div className="mb-6">
                   <a
                     href={lesson.videoUrl}
                     target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 hover:underline break-all"
+                    rel="noopener noreferrer"
+                    className="break-all text-blue-700 hover:underline"
                   >
                     Open video
                   </a>
@@ -161,7 +141,7 @@ function LessonDetail() {
                     <video
                       src={lesson.videoUrl}
                       controls
-                      className="mt-3 w-full rounded-lg bg-black max-h-96"
+                      className="mt-3 max-h-96 w-full rounded-lg bg-black"
                     >
                       Your browser does not support the video tag.
                     </video>
@@ -176,7 +156,7 @@ function LessonDetail() {
                   <button
                     type="button"
                     onClick={() => setEditing(true)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                   >
                     Edit
                   </button>
@@ -274,7 +254,6 @@ function LessonDetail() {
           )}
         </div>
       </section>
-      <Footer />
     </>
   );
 }

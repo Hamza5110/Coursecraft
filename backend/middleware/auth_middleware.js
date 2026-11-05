@@ -13,9 +13,21 @@ export const protect = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
 
-    const user = await User.findById(decoded.id).select("-password");
+    if (decoded.purpose && decoded.purpose !== "access") {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, invalid token purpose",
+      });
+    }
+
+    const user = await User.findById(decoded.id)
+      .select("_id username email role passwordChangedAt")
+      .lean();
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -23,9 +35,26 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    req.user = user; // now req.user._id works in controllers
+    if (
+      user.passwordChangedAt &&
+      decoded.iat &&
+      Math.floor(new Date(user.passwordChangedAt).getTime() / 1000) > decoded.iat
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Password was changed. Please log in again.",
+      });
+    }
+
+    req.user = {
+      _id: user._id,
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    };
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       success: false,
       message: "Not authorized, token failed",
@@ -34,13 +63,53 @@ export const protect = async (req, res, next) => {
 };
 
 export const authorize = (...roles) => {
-    return (req, res, next) => {
-      if (!roles.includes(req.user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to perform this action",
-        });
-      }
-      next();
-    };
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to perform this action",
+      });
+    }
+    next();
   };
+};
+
+/** Optional auth — attaches user when a valid access token is present. */
+export const optionalAuth = async (req, _res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next();
+    }
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
+    if (decoded.purpose && decoded.purpose !== "access") {
+      return next();
+    }
+    const user = await User.findById(decoded.id)
+      .select("_id username email role passwordChangedAt")
+      .lean();
+    if (
+      user &&
+      !(
+        user.passwordChangedAt &&
+        decoded.iat &&
+        Math.floor(new Date(user.passwordChangedAt).getTime() / 1000) >
+          decoded.iat
+      )
+    ) {
+      req.user = {
+        _id: user._id,
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      };
+    }
+  } catch {
+    // ignore invalid optional tokens
+  }
+  next();
+};

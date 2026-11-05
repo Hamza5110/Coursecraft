@@ -10,9 +10,11 @@ async function getTransporter() {
 
     if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
       return nodemailer.createTransport({
+        pool: true,
         host: SMTP_HOST,
         port: Number(SMTP_PORT) || 587,
         secure: Number(SMTP_PORT) === 465,
+        requireTLS: Number(SMTP_PORT) !== 465,
         auth: {
           user: SMTP_USER,
           pass: SMTP_PASS,
@@ -20,7 +22,10 @@ async function getTransporter() {
       });
     }
 
-    // Dev fallback: Ethereal test account (logs preview URL)
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SMTP is not configured");
+    }
+
     const testAccount = await nodemailer.createTestAccount();
     console.log(
       "[email] No SMTP env set — using Ethereal test account:",
@@ -30,6 +35,7 @@ async function getTransporter() {
       host: "smtp.ethereal.email",
       port: 587,
       secure: false,
+      requireTLS: true,
       auth: {
         user: testAccount.user,
         pass: testAccount.pass,
@@ -55,9 +61,11 @@ export async function sendMail({ to, subject, text, html }) {
     html,
   });
 
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  if (previewUrl) {
-    console.log("[email] Preview URL:", previewUrl);
+  if (process.env.NODE_ENV !== "production") {
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log("[email] Preview URL:", previewUrl);
+    }
   }
 
   return info;

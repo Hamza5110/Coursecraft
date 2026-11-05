@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import Pagination from "./Pagination";
 import { useAuth } from "../context/AuthContext";
 import { getAllCourses, getCourseInstructors, mediaUrl } from "../api/blogApi";
@@ -87,7 +85,6 @@ function Course() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -214,9 +211,9 @@ function Course() {
                     alt={course.title}
                     className="w-full h-40 object-cover bg-gray-200"
                     onError={(e) => {
-                      e.currentTarget.src =
-                        "https://placehold.co/600x240?text=Course";
-                    }}
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = "none";
+                  }}
                   />
                   <div className="p-5 flex flex-col flex-1">
                     <h2 className="text-xl font-semibold text-gray-800 mb-1">
@@ -233,7 +230,9 @@ function Course() {
                     <p className="text-gray-600 mb-4 flex-1">{preview}</p>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-blue-600">
-                        ${course.price}
+                        {Number(course.price) === 0
+                          ? "Free"
+                          : `$${course.price}`}
                       </span>
                       <Link
                         to={`/courses/${course.slug}`}
@@ -254,7 +253,6 @@ function Course() {
           />
         </div>
       </section>
-      <Footer />
     </>
   );
 }

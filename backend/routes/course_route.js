@@ -1,5 +1,9 @@
 import express from "express";
-import { protect, authorize } from "../middleware/auth_middleware.js";
+import {
+  protect,
+  authorize,
+  optionalAuth,
+} from "../middleware/auth_middleware.js";
 import {
   createCourse,
   getCourses,
@@ -70,7 +74,7 @@ router.post(
 router.put("/:slug/reviews/:reviewId", protect, updateReview);
 router.delete("/:slug/reviews/:reviewId", protect, deleteReview);
 
-router.get("/:slug", getCourseBySlug);
+router.get("/:slug", optionalAuth, getCourseBySlug);
 router.put("/:slug", protect, authorize("instructor", "admin"), updateCourse);
 router.delete("/:slug", protect, authorize("admin"), deleteCourse);
 router.post("/:slug/enroll", protect, authorize("student"), enrollInCourse);

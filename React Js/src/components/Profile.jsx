@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { changePassword, getUser, updateUser } from "../api/blogApi";
 
 function Profile() {
-  const { user, updateUser: updateAuthUser } = useAuth();
+  const navigate = useNavigate();
+  const { user, updateUser: updateAuthUser, logout } = useAuth();
   const [form, setForm] = useState({
     username: user?.username || "",
     email: user?.email || "",
+    currentPassword: "",
   });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -51,6 +51,7 @@ function Profile() {
         setForm({
           username: user.username || "",
           email: user.email || "",
+          currentPassword: "",
         });
       } finally {
         setLoading(false);
@@ -77,11 +78,23 @@ function Profile() {
     setError("");
     setMessage("");
     try {
+      const emailChanged =
+        form.email.trim().toLowerCase() !==
+        String(user.email || "").toLowerCase();
+      if (emailChanged && !form.currentPassword) {
+        setError("Current password is required to change email");
+        setSaving(false);
+        return;
+      }
       const data = await updateUser(user.id, {
         username: form.username.trim(),
         email: form.email.trim(),
+        ...(emailChanged
+          ? { currentPassword: form.currentPassword }
+          : {}),
       });
       updateAuthUser(data.user);
+      setForm((prev) => ({ ...prev, currentPassword: "" }));
       setMessage(data.message || "Profile updated successfully");
     } catch (err) {
       setError(err.message);
@@ -102,8 +115,8 @@ function Profile() {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      setPasswordError("New password must be at least 6 characters");
+    if (String(passwordForm.newPassword).length < 8) {
+      setPasswordError("New password must be at least 8 characters");
       return;
     }
 
@@ -113,11 +126,18 @@ function Profile() {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-      setPasswordMessage(data.message || "Password updated successfully");
+      setPasswordMessage(
+        data.message || "Password updated. Please log in again.",
+      );
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
+      });
+      logout();
+      navigate("/login", {
+        replace: true,
+        state: { message: "Password updated. Please log in again." },
       });
     } catch (err) {
       setPasswordError(err.message);
@@ -132,7 +152,6 @@ function Profile() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
@@ -179,32 +198,52 @@ function Profile() {
               required
             />
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="profile-email"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
               Email
             </label>
             <input
+              id="profile-email"
               name="email"
               value={form.email}
               onChange={handleChange}
               type="email"
-              className="w-full border p-2 rounded mb-4"
+              className="mb-4 w-full rounded border p-2"
               required
             />
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="profile-current-password"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Current password (required to change email)
+            </label>
+            <input
+              id="profile-current-password"
+              name="currentPassword"
+              value={form.currentPassword}
+              onChange={handleChange}
+              type="password"
+              autoComplete="current-password"
+              className="mb-4 w-full rounded border p-2"
+            />
+
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Role
             </label>
             <input
               value={user?.role || "student"}
               type="text"
-              className="w-full border p-2 rounded mb-4 bg-gray-50 capitalize"
+              className="mb-4 w-full rounded border bg-gray-50 p-2 capitalize"
               disabled
             />
 
             <button
               type="submit"
               disabled={saving || loading}
-              className="bg-blue-500 text-white rounded-md px-4 w-full py-2 hover:bg-blue-600 disabled:opacity-60"
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
@@ -246,7 +285,7 @@ function Profile() {
               type="password"
               className="w-full border p-2 rounded mb-4"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
             />
 
@@ -260,7 +299,7 @@ function Profile() {
               type="password"
               className="w-full border p-2 rounded mb-4"
               required
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
             />
 
@@ -274,7 +313,6 @@ function Profile() {
           </form>
         </div>
       </section>
-      <Footer />
     </>
   );
 }

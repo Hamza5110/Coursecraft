@@ -35,6 +35,8 @@ const reviewSchema = new mongoose.Schema(
 );
 
 reviewSchema.index({ course: 1, author: 1 }, { unique: true });
+reviewSchema.index({ course: 1, createdAt: -1 });
+
 
 const Review = mongoose.model("Review", reviewSchema);
 

@@ -34,8 +34,8 @@ function ResetPassword() {
       return;
     }
 
-    if (form.newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (form.newPassword.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 

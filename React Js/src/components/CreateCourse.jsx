@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { createCourse } from "../api/blogApi";
 import ImageUploadField from "./ImageUploadField";
@@ -50,7 +48,6 @@ function CreateCourse() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
@@ -128,7 +125,6 @@ function CreateCourse() {
           </form>
         </div>
       </section>
-      <Footer />
     </>
   );
 }

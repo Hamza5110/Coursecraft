@@ -1,25 +1,33 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import { BCRYPT_ROUNDS, validatePassword } from "../utils/password.js";
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
-    if (!users) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No users found" });
-    }
-    res
-      .status(200)
-      .json({ success: true, users: users.map((user) => user.toObject()) });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    const users = await User.find()
+      .select("username email role createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+    res.status(200).json({ success: true, users });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
   }
 };
 
 const getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const isOwner = String(req.user._id) === String(req.params.id);
+    const isAdmin = req.user.role === "admin";
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own profile",
+      });
+    }
+
+    const user = await User.findById(req.params.id)
+      .select("username email role createdAt")
+      .lean();
     if (!user) {
       return res
         .status(404)
@@ -34,8 +42,8 @@ const getUser = async (req, res) => {
         role: user.role,
       },
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to fetch user" });
   }
 };
 
@@ -50,24 +58,47 @@ const updateUser = async (req, res) => {
       });
     }
 
-    const { username, email } = req.body;
+    const username =
+      typeof req.body.username === "string" ? req.body.username.trim() : "";
+    const email =
+      typeof req.body.email === "string"
+        ? req.body.email.trim().toLowerCase()
+        : "";
+    const { currentPassword } = req.body;
+
     if (!username || !email) {
       return res
         .status(400)
         .json({ success: false, message: "Username and email are required" });
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { username: username.trim(), email: email.trim().toLowerCase() },
-      { returnDocument: "after", runValidators: true },
-    ).select("-password");
-
+    const user = await User.findById(req.params.id).select("+password email");
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    const emailChanged = email !== user.email;
+    if (emailChanged && isOwner) {
+      if (typeof currentPassword !== "string" || !currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is required to change email",
+        });
+      }
+      const match = await bcrypt.compare(currentPassword, user.password);
+      if (!match) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is incorrect",
+        });
+      }
+    }
+
+    user.username = username;
+    user.email = email;
+    await user.save();
 
     res.status(200).json({
       success: true,
@@ -80,7 +111,12 @@ const updateUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    if (err.code === 11000) {
+      return res
+        .status(409)
+        .json({ success: false, message: "Email already in use" });
+    }
+    res.status(500).json({ success: false, message: "Failed to update profile" });
   }
 };
 
@@ -128,8 +164,8 @@ const updateUserRole = async (req, res) => {
         role: user.role,
       },
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to update role" });
   }
 };
 
@@ -151,10 +187,57 @@ const changePassword = async (req, res) => {
       });
     }
 
-    if (String(newPassword).length < 6) {
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.ok) {
+      return res
+        .status(400)
+        .json({ success: false, message: passwordCheck.message });
+    }
+
+    const user = await User.findById(req.params.id).select("+password");
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const match = await bcrypt.compare(String(currentPassword), user.password);
+    if (!match) {
       return res.status(400).json({
         success: false,
-        message: "New password must be at least 6 characters",
+        message: "Current password is incorrect",
+      });
+    }
+
+    const sameAsOld = await bcrypt.compare(String(newPassword), user.password);
+    if (sameAsOld) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from the current password",
+      });
+    }
+
+    user.password = await bcrypt.hash(String(newPassword), BCRYPT_ROUNDS);
+    user.passwordChangedAt = new Date();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully. Please log in again.",
+    });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to change password" });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    if (String(req.user._id) === String(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete your own account from this endpoint",
       });
     }
 
@@ -164,48 +247,19 @@ const changePassword = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-
-    const match = await bcrypt.compare(currentPassword, user.password);
-    if (!match) {
+    if (user.role === "admin") {
       return res.status(400).json({
         success: false,
-        message: "Current password is incorrect",
+        message: "Cannot delete an admin user",
       });
     }
 
-    const sameAsOld = await bcrypt.compare(newPassword, user.password);
-    if (sameAsOld) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be different from the current password",
-      });
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully",
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
+    await user.deleteOne();
     res
       .status(200)
       .json({ success: true, message: "User deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res.status(500).json({ success: false, message: "Failed to delete user" });
   }
 };
 

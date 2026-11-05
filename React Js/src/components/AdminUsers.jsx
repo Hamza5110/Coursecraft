@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { deleteUser, getAllUsers, updateUserRole } from "../api/blogApi";
 
@@ -92,7 +90,6 @@ function AdminUsers() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
@@ -195,7 +192,6 @@ function AdminUsers() {
           )}
         </div>
       </section>
-      <Footer />
     </>
   );
 }

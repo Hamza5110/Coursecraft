@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import {
   createComment,
@@ -79,11 +77,13 @@ function BlogDetail() {
     blog && String(blog.author?._id || blog.author) === String(user?.id);
   const isAdmin = user?.role === "admin";
   const canManage = isOwner || isAdmin;
-  const likesCount = blog?.likedBy?.length || 0;
+  const likesCount = blog?.likesCount ?? blog?.likedBy?.length ?? 0;
   const liked =
+    blog?.liked ??
     blog?.likedBy?.some(
-      (id) => String(id?._id || id) === String(user?.id),
-    ) || false;
+      (likeId) => String(likeId?._id || likeId) === String(user?.id),
+    ) ??
+    false;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -128,11 +128,23 @@ function BlogDetail() {
   };
 
   const handleToggleLike = async () => {
+    if (!user) {
+      navigate("/login", { state: { from: { pathname: `/blogs/${id}` } } });
+      return;
+    }
     setLiking(true);
     setError("");
     try {
       const data = await toggleBlogLike(id);
-      setBlog(data.blog);
+      setBlog((prev) =>
+        prev
+          ? {
+              ...prev,
+              liked: data.liked,
+              likesCount: data.likesCount,
+            }
+          : prev,
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -183,7 +195,6 @@ function BlogDetail() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-3xl mx-auto px-4">
           <Link
@@ -204,6 +215,7 @@ function BlogDetail() {
                   alt={blog.title}
                   className="w-full h-56 object-cover bg-gray-200"
                   onError={(e) => {
+                    e.currentTarget.onerror = null;
                     e.currentTarget.style.display = "none";
                   }}
                 />
@@ -398,7 +410,6 @@ function BlogDetail() {
           )}
         </div>
       </section>
-      <Footer />
     </>
   );
 }

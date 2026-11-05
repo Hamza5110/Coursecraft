@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middleware/auth_middleware.js";
+import { optionalAuth, protect } from "../middleware/auth_middleware.js";
 import {
   createBlog,
   getAllBlogs,
@@ -17,7 +17,7 @@ import {
 
 const router = express.Router();
 
-router.get("/all", getAllBlogs);
+router.get("/all", optionalAuth, getAllBlogs);
 router.get("/liked", protect, getLikedBlogs);
 
 router.get("/:id/comments", getCommentsByBlog);
@@ -25,7 +25,7 @@ router.post("/:id/comments", protect, createComment);
 router.delete("/:id/comments/:commentId", protect, deleteComment);
 router.post("/:id/like", protect, toggleBlogLike);
 
-router.get("/:id", getBlogById);
+router.get("/:id", optionalAuth, getBlogById);
 router.post("/create", protect, createBlog);
 router.put("/:id", protect, updateBlog);
 router.delete("/:id", protect, deleteBlog);

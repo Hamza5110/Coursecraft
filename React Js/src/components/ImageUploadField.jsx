@@ -66,8 +66,9 @@ function ImageUploadField({
           alt="Preview"
           className="mt-3 h-32 w-full object-cover rounded-lg bg-gray-100"
           onError={(e) => {
-            e.currentTarget.src = "https://placehold.co/600x240?text=Image";
-          }}
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = "none";
+                  }}
         />
       )}
     </div>

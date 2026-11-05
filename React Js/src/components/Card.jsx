@@ -1,47 +1,58 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { mediaUrl } from "../api/blogApi";
 import { stripHtml } from "../utils/html";
 
-export default function Card({
+function Card({
   id,
   title,
   body,
+  excerpt,
   authorName,
   likesCount = 0,
   coverImage,
 }) {
-  const plain = stripHtml(body || "");
+  const plain = excerpt || stripHtml(body || "");
   const preview =
     plain.length > 120 ? `${plain.slice(0, 120)}...` : plain;
+  const src = mediaUrl(coverImage);
 
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 border border-gray-200 flex flex-col overflow-hidden">
-      {coverImage && (
+    <article className="relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:shadow-md">
+      {src ? (
         <img
-          src={mediaUrl(coverImage)}
-          alt={title}
-          className="w-full h-40 object-cover bg-gray-200"
+          src={src}
+          alt=""
+          width={400}
+          height={160}
+          loading="lazy"
+          decoding="async"
+          className="h-40 w-full bg-gray-200 object-cover"
           onError={(e) => {
+            e.currentTarget.onerror = null;
             e.currentTarget.style.display = "none";
           }}
         />
-      )}
-      <div className="p-6 flex flex-col flex-1">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">{title}</h2>
+      ) : null}
+      <div className="flex flex-1 flex-col p-6">
+        <h3 className="mb-2 line-clamp-2 text-xl font-semibold text-gray-800">
+          <Link
+            to={`/blogs/${id}`}
+            className="after:absolute after:inset-0 hover:text-blue-700"
+          >
+            {title}
+          </Link>
+        </h3>
         {authorName && (
-          <p className="text-sm text-gray-500 mb-3">By {authorName}</p>
+          <p className="mb-3 text-sm text-gray-500">By {authorName}</p>
         )}
-        <p className="text-gray-600 mb-4 flex-1">{preview}</p>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="mb-4 flex-1 text-gray-600">{preview}</p>
+        <p className="text-sm text-gray-500">
           {likesCount} like{likesCount === 1 ? "" : "s"}
         </p>
-        <Link
-          to={`/blogs/${id}`}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition text-center"
-        >
-          Read More &rarr;
-        </Link>
       </div>
-    </div>
+    </article>
   );
 }
+
+export default memo(Card);

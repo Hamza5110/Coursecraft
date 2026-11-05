@@ -3,58 +3,61 @@ import Comment from "../models/Comment.js";
 
 export const getCommentsByBlog = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id);
-    if (!blog) {
+    const exists = await Blog.exists({ _id: req.params.id });
+    if (!exists) {
       return res
         .status(404)
         .json({ success: false, message: "Blog not found" });
     }
 
-    const comments = await Comment.find({ blog: blog._id })
-      .populate("author", "username email role")
-      .sort({ createdAt: -1 });
+    const comments = await Comment.find({ blog: req.params.id })
+      .populate("author", "username")
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
 
     res.status(200).json({ success: true, comments });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch comments" });
   }
 };
 
 export const createComment = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id);
-    if (!blog) {
+    const exists = await Blog.exists({ _id: req.params.id });
+    if (!exists) {
       return res
         .status(404)
         .json({ success: false, message: "Blog not found" });
     }
 
     const { content } = req.body;
-    if (!content || !content.trim()) {
+    if (!content || !String(content).trim()) {
       return res
         .status(400)
         .json({ success: false, message: "Comment content is required" });
     }
 
     const comment = await Comment.create({
-      blog: blog._id,
+      blog: req.params.id,
       author: req.user._id,
       authorName: req.user.username,
-      content: content.trim(),
+      content: String(content).trim().slice(0, 2000),
     });
 
-    const populated = await Comment.findById(comment._id).populate(
-      "author",
-      "username email role",
-    );
+    await comment.populate("author", "username");
 
     res.status(201).json({
       success: true,
       message: "Comment added",
-      comment: populated,
+      comment,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to create comment" });
   }
 };
 
@@ -88,7 +91,9 @@ export const deleteComment = async (req, res) => {
       success: true,
       message: "Comment deleted",
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to delete comment" });
   }
 };

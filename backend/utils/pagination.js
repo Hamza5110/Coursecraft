@@ -12,7 +12,7 @@ export function parsePagination(query, { defaultLimit = 10, maxLimit = 50 } = {}
 
 export function buildPagination({ page, limit, total }) {
   const totalPages = Math.max(1, Math.ceil(total / limit) || 1);
-  const currentPage = Math.min(page, totalPages);
+  const currentPage = Math.min(Math.max(1, page), totalPages);
   return {
     page: currentPage,
     limit,
@@ -21,4 +21,10 @@ export function buildPagination({ page, limit, total }) {
     hasNext: currentPage < totalPages,
     hasPrev: currentPage > 1,
   };
+}
+
+/** Prefer this when computing skip so out-of-range pages don't return empty arrays. */
+export function resolveSkip({ page, limit, total }) {
+  const { page: currentPage } = buildPagination({ page, limit, total });
+  return (currentPage - 1) * limit;
 }

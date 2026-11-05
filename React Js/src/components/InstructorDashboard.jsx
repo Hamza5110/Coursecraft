@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { getTeachingCourses, mediaUrl } from "../api/blogApi";
 
@@ -50,7 +48,6 @@ function InstructorDashboard() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -139,9 +136,9 @@ function InstructorDashboard() {
                             alt={course.title}
                             className="h-12 w-16 object-cover rounded bg-gray-100"
                             onError={(e) => {
-                              e.currentTarget.src =
-                                "https://placehold.co/96x72?text=Course";
-                            }}
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = "none";
+                  }}
                           />
                           <div>
                             <p className="font-medium text-gray-900">
@@ -190,7 +187,6 @@ function InstructorDashboard() {
           )}
         </div>
       </section>
-      <Footer />
     </>
   );
 }

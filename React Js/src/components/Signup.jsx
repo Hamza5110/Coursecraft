@@ -1,6 +1,8 @@
 ﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signup } from "../api/blogApi";
+import Alert from "./ui/Alert";
+import Button from "./ui/Button";
 
 function Signup() {
   const navigate = useNavigate();
@@ -8,7 +10,6 @@ function Signup() {
     username: "",
     email: "",
     password: "",
-    role: "student",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,70 +25,81 @@ function Signup() {
     try {
       const data = await signup(form);
       if (!data.success) throw new Error(data.message || "Signup Failed");
-      navigate("/login");
-    } catch (error) {
-      setError(error.message);
+      navigate("/login", {
+        state: { message: "Account created. You can log in now." },
+      });
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-slate-100">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-blue-50 px-4 py-10">
       <form
         onSubmit={handleSubmit}
-        className="bg-white w-80 p-6 rounded-xl shadow-lg"
+        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg"
+        noValidate
       >
-        <h2 className="text-2xl font-bold text-center mb-5">Signup</h2>
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+        <h1 className="mb-2 text-center font-display text-2xl font-bold">
+          Create your account
+        </h1>
+        <p className="mb-5 text-center text-sm text-gray-500">
+          New accounts start as students. Instructors are approved by an admin.
+        </p>
+        {error && <Alert className="mb-3">{error}</Alert>}
+        <label htmlFor="signup-username" className="mb-1 block text-sm font-medium">
+          Username
+        </label>
         <input
+          id="signup-username"
           name="username"
           value={form.username}
           onChange={handleChange}
           type="text"
-          placeholder="Username"
-          className="w-full border p-2 rounded mb-4"
+          autoComplete="username"
+          className="mb-4 w-full rounded-lg border border-gray-200 p-2"
           required
         />
+        <label htmlFor="signup-email" className="mb-1 block text-sm font-medium">
+          Email
+        </label>
         <input
+          id="signup-email"
           name="email"
           value={form.email}
           onChange={handleChange}
           type="email"
-          placeholder="Email"
-          className="w-full border p-2 rounded mb-4"
+          autoComplete="email"
+          className="mb-4 w-full rounded-lg border border-gray-200 p-2"
           required
         />
+        <label
+          htmlFor="signup-password"
+          className="mb-1 block text-sm font-medium"
+        >
+          Password
+        </label>
         <input
+          id="signup-password"
           name="password"
           value={form.password}
           onChange={handleChange}
           type="password"
-          placeholder="Password"
-          className="w-full border p-2 rounded mb-4"
+          autoComplete="new-password"
+          className="mb-1 w-full rounded-lg border border-gray-200 p-2"
           required
-          minLength={6}
+          minLength={8}
         />
-        <select
-          name="role"
-          value={form.role}
-          onChange={handleChange}
-          className="w-full border p-2 rounded mb-4"
-          required
-        >
-          <option value="student">Student</option>
-          <option value="instructor">Instructor</option>
-        </select>
-        <button
-          disabled={loading}
-          className="bg-blue-500 text-white rounded-md px-4 w-full py-2 hover:bg-blue-600"
-        >
-          {loading ? "Creating..." : "Signup"}
-        </button>
-        <p className="text-center mt-3">
-          Already Account?{" "}
-          <Link className="text-blue-600 hover:underline" to="/login">
-            Login
+        <p className="mb-4 text-xs text-gray-500">At least 8 characters.</p>
+        <Button type="submit" className="w-full" loading={loading}>
+          Sign up
+        </Button>
+        <p className="mt-3 text-center text-sm">
+          Already have an account?{" "}
+          <Link className="text-blue-700 hover:underline" to="/login">
+            Log in
           </Link>
         </p>
       </form>

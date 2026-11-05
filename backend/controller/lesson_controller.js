@@ -1,5 +1,7 @@
 import Course from "../models/Course.js";
 import Lesson from "../models/Lesson.js";
+import { sanitizeContent } from "../utils/sanitize.js";
+import { assertSafeMediaUrl } from "../utils/urls.js";
 
 const findCourseBySlug = (slug) => Course.findOne({ slug });
 
@@ -20,7 +22,9 @@ const canAccessLessons = (course, user) => {
 
 export const getLessonsByCourse = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug)
+      .select("instructor students")
+      .lean();
     if (!course) {
       return res
         .status(404)
@@ -36,17 +40,26 @@ export const getLessonsByCourse = async (req, res) => {
 
     const lessons = await Lesson.find({ course: course._id })
       .sort({ order: 1, createdAt: 1 })
-      .select("title order videoUrl createdAt updatedAt");
+      .select("title order videoUrl createdAt updatedAt")
+      .lean();
 
-    res.status(200).json({ success: true, lessons });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(200).json({
+      success: true,
+      lessons,
+      canManage: canManageCourse(course, req.user),
+    });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch lessons" });
   }
 };
 
 export const getLessonById = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug)
+      .select("title instructor students")
+      .lean();
     if (!course) {
       return res
         .status(404)
@@ -63,7 +76,7 @@ export const getLessonById = async (req, res) => {
     const lesson = await Lesson.findOne({
       _id: req.params.lessonId,
       course: course._id,
-    });
+    }).lean();
 
     if (!lesson) {
       return res
@@ -71,15 +84,25 @@ export const getLessonById = async (req, res) => {
         .json({ success: false, message: "Lesson not found" });
     }
 
-    res.status(200).json({ success: true, lesson });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(200).json({
+      success: true,
+      lesson,
+      courseTitle: course.title,
+      courseSlug: req.params.slug,
+      canManage: canManageCourse(course, req.user),
+    });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch lesson" });
   }
 };
 
 export const createLesson = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug).select(
+      "instructor students",
+    );
     if (!course) {
       return res
         .status(404)
@@ -101,19 +124,31 @@ export const createLesson = async (req, res) => {
       });
     }
 
+    const safeContent = sanitizeContent(content);
+    if (!safeContent.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Content is required",
+      });
+    }
+
+    const safeVideoUrl = videoUrl ? String(videoUrl).trim() : "";
+    if (safeVideoUrl) assertSafeMediaUrl(safeVideoUrl, "Video URL");
+
     let lessonOrder = Number(order);
     if (!Number.isFinite(lessonOrder) || lessonOrder < 1) {
       const last = await Lesson.findOne({ course: course._id })
         .sort({ order: -1 })
-        .select("order");
+        .select("order")
+        .lean();
       lessonOrder = last ? last.order + 1 : 1;
     }
 
     const lesson = await Lesson.create({
       course: course._id,
-      title: title.trim(),
-      content,
-      videoUrl: (videoUrl || "").trim(),
+      title: String(title).trim(),
+      content: safeContent,
+      videoUrl: safeVideoUrl,
       order: lessonOrder,
     });
 
@@ -123,13 +158,19 @@ export const createLesson = async (req, res) => {
       lesson,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    const status = error.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      message: status === 500 ? "Failed to create lesson" : error.message,
+    });
   }
 };
 
 export const updateLesson = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug).select(
+      "instructor students",
+    );
     if (!course) {
       return res
         .status(404)
@@ -154,9 +195,22 @@ export const updateLesson = async (req, res) => {
     }
 
     const { title, content, videoUrl, order } = req.body;
-    if (title !== undefined) lesson.title = title.trim();
-    if (content !== undefined) lesson.content = content;
-    if (videoUrl !== undefined) lesson.videoUrl = videoUrl.trim();
+    if (title !== undefined) lesson.title = String(title).trim();
+    if (content !== undefined) {
+      const safeContent = sanitizeContent(content);
+      if (!safeContent.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Content is required",
+        });
+      }
+      lesson.content = safeContent;
+    }
+    if (videoUrl !== undefined) {
+      const safeVideoUrl = String(videoUrl).trim();
+      if (safeVideoUrl) assertSafeMediaUrl(safeVideoUrl, "Video URL");
+      lesson.videoUrl = safeVideoUrl;
+    }
     if (order !== undefined) {
       const nextOrder = Number(order);
       if (!Number.isFinite(nextOrder) || nextOrder < 1) {
@@ -175,13 +229,19 @@ export const updateLesson = async (req, res) => {
       lesson,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    const status = error.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      message: status === 500 ? "Failed to update lesson" : error.message,
+    });
   }
 };
 
 export const deleteLesson = async (req, res) => {
   try {
-    const course = await findCourseBySlug(req.params.slug);
+    const course = await findCourseBySlug(req.params.slug).select(
+      "instructor students",
+    );
     if (!course) {
       return res
         .status(404)
@@ -209,7 +269,9 @@ export const deleteLesson = async (req, res) => {
       success: true,
       message: "Lesson deleted successfully",
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to delete lesson" });
   }
 };

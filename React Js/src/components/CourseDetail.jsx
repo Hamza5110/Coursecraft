@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import {
   createCourseReview,
@@ -72,9 +70,7 @@ function CourseDetail() {
     (isSameId(course.instructor, user?.id) ||
       isSameId(course.instructor?._id, user?.id));
   const canManage = isAdmin || (user?.role === "instructor" && isOwner);
-  const enrolled =
-    course?.students?.some((studentId) => isSameId(studentId, user?.id)) ||
-    false;
+  const enrolled = Boolean(course?.enrolled);
   const canViewLessons = canManage || enrolled;
   const myReview =
     reviews.find((review) => isSameId(review.author, user?.id)) || null;
@@ -149,21 +145,15 @@ function CourseDetail() {
   }, [myReview]);
 
   useEffect(() => {
-    if (!course) return;
-    const allowed =
-      isAdmin ||
-      (user?.role === "instructor" &&
-        (isSameId(course.instructor, user?.id) ||
-          isSameId(course.instructor?._id, user?.id))) ||
-      course.students?.some((studentId) => isSameId(studentId, user?.id));
-    if (allowed) {
+    if (!course?._id) return;
+    if (canViewLessons) {
       loadLessons();
     } else {
       setLessons([]);
       setLessonsError("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [course, user?.id, user?.role, slug]);
+  }, [course?._id, canViewLessons, slug]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -214,6 +204,12 @@ function CourseDetail() {
   };
 
   const handleEnroll = async () => {
+    if (!user) {
+      navigate("/login", {
+        state: { from: { pathname: `/courses/${slug}` } },
+      });
+      return;
+    }
     setSaving(true);
     setError("");
     setMessage("");
@@ -346,7 +342,6 @@ function CourseDetail() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-3xl mx-auto px-4">
           <Link
@@ -367,8 +362,8 @@ function CourseDetail() {
                 alt={course.title}
                 className="w-full h-56 object-cover bg-gray-200"
                 onError={(e) => {
-                  e.currentTarget.src =
-                    "https://placehold.co/800x320?text=Course";
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.style.display = "none";
                 }}
               />
               <div className="p-6">
@@ -380,8 +375,10 @@ function CourseDetail() {
                   {course.createdAt &&
                     ` · ${new Date(course.createdAt).toLocaleDateString()}`}
                 </p>
-                <p className="text-2xl font-semibold text-blue-600 mb-2">
-                  ${course.price}
+                <p className="mb-2 text-2xl font-semibold text-blue-700">
+                  {Number(course.price) === 0
+                    ? "Free"
+                    : `$${course.price}`}
                 </p>
                 <div className="flex items-center gap-2 mb-4">
                   <StarRating
@@ -399,19 +396,22 @@ function CourseDetail() {
                   {course.description}
                 </p>
                 <p className="text-sm text-gray-500 mb-8">
-                  {course.students?.length || 0} student
-                  {(course.students?.length || 0) === 1 ? "" : "s"} enrolled
+                  {course.studentCount || 0} student
+                  {(course.studentCount || 0) === 1 ? "" : "s"} enrolled
+                  <span className="ml-2 text-xs text-gray-400">
+                    (enrollment is free)
+                  </span>
                 </p>
 
                 <div className="flex flex-wrap gap-3">
-                  {isStudent && !enrolled && (
+                  {(!user || isStudent) && !enrolled && (
                     <button
                       type="button"
                       onClick={handleEnroll}
                       disabled={saving}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-60"
+                      className="rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:opacity-60"
                     >
-                      {saving ? "Enrolling..." : "Enroll"}
+                      {saving ? "Enrolling..." : user ? "Enroll free" : "Log in to enroll"}
                     </button>
                   )}
                   {isStudent && enrolled && (
@@ -770,7 +770,6 @@ function CourseDetail() {
           )}
         </div>
       </section>
-      <Footer />
     </>
   );
 }

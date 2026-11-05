@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-nav.png";
 import { useAuth } from "../context/AuthContext";
 
 const linkClass = ({ isActive }) =>
@@ -50,56 +50,75 @@ function Navbar() {
         <Link
           to="/"
           onClick={closeMenus}
-          className="flex items-center shrink-0"
+          className="flex h-full shrink-0 items-center py-2"
         >
-          <img src={logo} alt="Blog Verse" className="w-70 h-40" />
+          <img
+            src={logo}
+            alt="Blog Verse"
+            className="h-10 w-auto object-contain object-left sm:h-11"
+            width={200}
+            height={48}
+          />
         </Link>
 
-        {isLoggedIn && (
-          <div className="hidden md:flex items-center gap-6">
-            <NavLink to="/" end className={linkClass}>
-              Home
+        <div className="hidden lg:flex items-center gap-6">
+          <NavLink to="/" end className={linkClass}>
+            Blogs
+          </NavLink>
+          <NavLink to="/courses" className={linkClass}>
+            Courses
+          </NavLink>
+          {isLoggedIn && isStudent && (
+            <NavLink to="/my-courses" className={linkClass}>
+              My Courses
             </NavLink>
-            <NavLink to="/courses" className={linkClass}>
-              Courses
+          )}
+          {isLoggedIn && (
+            <NavLink to="/blogs/liked" className={linkClass}>
+              Liked posts
             </NavLink>
-            {isStudent && (
-              <NavLink to="/my-courses" className={linkClass}>
-                My Courses
+          )}
+          {isLoggedIn && canCreateCourse && (
+            <>
+              <NavLink to="/instructor" className={linkClass}>
+                Dashboard
               </NavLink>
-            )}
+              <NavLink to="/courses/new" className={linkClass}>
+                Create Course
+              </NavLink>
+              <NavLink to="/blogs/new" className={linkClass}>
+                Create Blog
+              </NavLink>
+            </>
+          )}
+          {isLoggedIn && !canCreateCourse && (
             <NavLink to="/blogs/new" className={linkClass}>
               Create Blog
             </NavLink>
-            <NavLink to="/blogs/liked" className={linkClass}>
-              Liked
+          )}
+          {isAdmin && (
+            <NavLink to="/admin/users" className={linkClass}>
+              Admin
             </NavLink>
-            {canCreateCourse && (
-              <>
-                <NavLink to="/instructor" className={linkClass}>
-                  Dashboard
-                </NavLink>
-                <NavLink to="/courses/new" className={linkClass}>
-                  Create Course
-                </NavLink>
-              </>
-            )}
-            {isAdmin && (
-              <NavLink to="/admin/users" className={linkClass}>
-                Admin
-              </NavLink>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
           {!isLoggedIn && (
-            <Link
-              to="/login"
-              className="bg-blue-500 text-white rounded-md hover:bg-blue-600 px-3 py-1.5 text-sm font-medium transition"
-            >
-              Login
-            </Link>
+            <>
+              <Link
+                to="/signup"
+                className="hidden sm:inline-flex rounded-md px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-50 transition"
+              >
+                Sign up
+              </Link>
+              <Link
+                to="/login"
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
+              >
+                Log in
+              </Link>
+            </>
           )}
 
           {isLoggedIn && (
@@ -169,28 +188,31 @@ function Navbar() {
             </div>
           )}
 
-          {isLoggedIn && (
-            <button
-              type="button"
-              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-md border border-gray-200 text-gray-700"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? "✕" : "☰"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 text-gray-700"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
         </div>
       </div>
 
-      {isLoggedIn && menuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 flex flex-col gap-3">
+      {menuOpen && (
+        <div
+          id="mobile-nav"
+          className="flex flex-col gap-3 border-t border-gray-100 bg-white px-4 py-3 lg:hidden"
+        >
           <NavLink to="/" end className={linkClass} onClick={closeMenus}>
-            Home
+            Blogs
           </NavLink>
           <NavLink to="/courses" className={linkClass} onClick={closeMenus}>
             Courses
           </NavLink>
-          {isStudent && (
+          {isLoggedIn && isStudent && (
             <NavLink
               to="/my-courses"
               className={linkClass}
@@ -199,13 +221,25 @@ function Navbar() {
               My Courses
             </NavLink>
           )}
-          <NavLink to="/blogs/new" className={linkClass} onClick={closeMenus}>
-            Create Blog
-          </NavLink>
-          <NavLink to="/blogs/liked" className={linkClass} onClick={closeMenus}>
-            Liked
-          </NavLink>
-          {canCreateCourse && (
+          {isLoggedIn && (
+            <>
+              <NavLink
+                to="/blogs/new"
+                className={linkClass}
+                onClick={closeMenus}
+              >
+                Create Blog
+              </NavLink>
+              <NavLink
+                to="/blogs/liked"
+                className={linkClass}
+                onClick={closeMenus}
+              >
+                Liked posts
+              </NavLink>
+            </>
+          )}
+          {isLoggedIn && canCreateCourse && (
             <>
               <NavLink
                 to="/instructor"
@@ -232,9 +266,33 @@ function Navbar() {
               Admin
             </NavLink>
           )}
-          <NavLink to="/profile" className={linkClass} onClick={closeMenus}>
-            Profile
-          </NavLink>
+          {isLoggedIn ? (
+            <>
+              <NavLink
+                to="/profile"
+                className={linkClass}
+                onClick={closeMenus}
+              >
+                Profile
+              </NavLink>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-left font-medium text-red-600"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login" className={linkClass} onClick={closeMenus}>
+                Log in
+              </NavLink>
+              <NavLink to="/signup" className={linkClass} onClick={closeMenus}>
+                Sign up
+              </NavLink>
+            </>
+          )}
         </div>
       )}
     </nav>

@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext";
 import { createBlog } from "../api/blogApi";
 import ImageUploadField from "./ImageUploadField";
@@ -43,7 +41,6 @@ function CreateBlog() {
 
   return (
     <>
-      <Navbar />
       <section className="min-h-[70vh] bg-gray-100 py-10">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
@@ -102,7 +99,6 @@ function CreateBlog() {
           </form>
         </div>
       </section>
-      <Footer />
     </>
   );
 }
