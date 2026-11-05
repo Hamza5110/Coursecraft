@@ -17,6 +17,12 @@ export function validatePassword(password) {
       message: `Password must be at most ${MAX_BYTES} bytes`,
     };
   }
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    return {
+      ok: false,
+      message: "Password must include at least one letter and one number",
+    };
+  }
   return { ok: true };
 }
 

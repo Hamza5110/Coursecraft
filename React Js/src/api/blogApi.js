@@ -34,18 +34,9 @@ export function mediaUrl(path) {
   return "";
 }
 
-function authHeaders(hasBody = false) {
-  const token = localStorage.getItem("token");
+function jsonHeaders(hasBody = false) {
   return {
     ...(hasBody ? { "Content-Type": "application/json" } : {}),
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-}
-
-function authHeadersMultipart() {
-  const token = localStorage.getItem("token");
-  return {
-    ...(token && { Authorization: `Bearer ${token}` }),
   };
 }
 
@@ -87,8 +78,9 @@ async function request(path, { method = "GET", body, signal } = {}) {
   const hasBody = body !== undefined;
   const res = await fetch(`${API_BASE}${path}`, {
     method,
-    headers: authHeaders(hasBody),
+    headers: jsonHeaders(hasBody),
     body: hasBody ? JSON.stringify(body) : undefined,
+    credentials: "include",
     signal,
   });
   return handleResponse(res);
@@ -110,14 +102,16 @@ export async function uploadImage(file) {
   body.append("image", file);
   const res = await fetch(`${API_BASE}/upload`, {
     method: "POST",
-    headers: authHeadersMultipart(),
     body,
+    credentials: "include",
   });
   return handleResponse(res);
 }
 
 export const signup = (payload) => request("/auth/signup", { method: "POST", body: payload });
 export const login = (payload) => request("/auth/login", { method: "POST", body: payload });
+export const logout = () => request("/auth/logout", { method: "POST", body: {} });
+export const getMe = (signal) => request("/auth/me", { signal });
 export const forgotPassword = (payload) =>
   request("/auth/forgot-password", { method: "POST", body: payload });
 export const resetPassword = (payload) =>

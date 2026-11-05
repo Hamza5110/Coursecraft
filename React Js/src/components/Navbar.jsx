@@ -32,10 +32,10 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setProfileOpen(false);
     setMenuOpen(false);
-    logout();
+    await logout();
     navigate("/login");
   };
 

@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendMail } from "../utils/email.js";
 import { BCRYPT_ROUNDS, validatePassword } from "../utils/password.js";
+import {
+  clearAccessCookie,
+  setAccessCookie,
+} from "../utils/cookies.js";
 
 const ACCESS_TOKEN_TTL = "7d";
 const ACCESS_TOKEN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -13,6 +17,15 @@ function signAccessToken(userId) {
     process.env.JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_TTL, algorithm: "HS256" },
   );
+}
+
+function shapeUser(user) {
+  return {
+    id: user._id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+  };
 }
 
 const signup = async (req, res) => {
@@ -51,12 +64,7 @@ const signup = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User created",
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      user: shapeUser(user),
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -96,22 +104,34 @@ const login = async (req, res) => {
     }
 
     const token = signAccessToken(user._id);
+    setAccessCookie(res, token);
 
     res.json({
       success: true,
       message: "Login successful",
-      token,
       expiresIn: new Date(Date.now() + ACCESS_TOKEN_MS),
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      user: shapeUser(user),
     });
   } catch {
     res.status(500).json({ success: false, message: "Login failed" });
   }
+};
+
+const logout = async (_req, res) => {
+  clearAccessCookie(res);
+  res.status(200).json({ success: true, message: "Logged out" });
+};
+
+const me = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    user: {
+      id: req.user._id,
+      username: req.user.username,
+      email: req.user.email,
+      role: req.user.role,
+    },
+  });
 };
 
 const forgotPassword = async (req, res) => {
@@ -155,7 +175,6 @@ const forgotPassword = async (req, res) => {
              <p>If you did not request this, you can ignore this email.</p>`,
     }).catch((err) => console.error("[email] forgot-password failed:", err.message));
   } catch (err) {
-    // If headers already sent, just log.
     if (res.headersSent) {
       console.error("[forgotPassword]", err.message);
       return;
@@ -208,7 +227,6 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // Single-use: reject if password was already changed after this token was issued.
     if (
       user.passwordChangedAt &&
       decoded.iat &&
@@ -224,6 +242,8 @@ const resetPassword = async (req, res) => {
     user.passwordChangedAt = new Date();
     await user.save();
 
+    clearAccessCookie(res);
+
     res.status(200).json({
       success: true,
       message: "Password reset successfully. You can log in now.",
@@ -233,4 +253,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { signup, login, forgotPassword, resetPassword };
+export { signup, login, logout, me, forgotPassword, resetPassword };

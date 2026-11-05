@@ -92,7 +92,9 @@ function Signup() {
           required
           minLength={8}
         />
-        <p className="mb-4 text-xs text-gray-500">At least 8 characters.</p>
+        <p className="mb-4 text-xs text-gray-500">
+          At least 8 characters, including a letter and a number.
+        </p>
         <Button type="submit" className="w-full" loading={loading}>
           Sign up
         </Button>

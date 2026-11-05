@@ -25,7 +25,7 @@ function Login() {
     try {
       const data = await login(form);
       if (!data.success) throw new Error(data.message || "Login failed");
-      loginContext(data.token, data.user);
+      loginContext(data.user);
       const redirectTo = location.state?.from?.pathname || "/";
       navigate(redirectTo, { replace: true });
     } catch (err) {

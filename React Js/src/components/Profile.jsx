@@ -115,8 +115,15 @@ function Profile() {
       return;
     }
 
-    if (String(passwordForm.newPassword).length < 8) {
-      setPasswordError("New password must be at least 8 characters");
+    const nextPassword = String(passwordForm.newPassword);
+    if (
+      nextPassword.length < 8 ||
+      !/[A-Za-z]/.test(nextPassword) ||
+      !/[0-9]/.test(nextPassword)
+    ) {
+      setPasswordError(
+        "Password must be at least 8 characters and include a letter and a number",
+      );
       return;
     }
 

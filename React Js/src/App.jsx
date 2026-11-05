@@ -33,8 +33,11 @@ function PageFallback() {
 }
 
 function GuestOnly({ children }) {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, bootstrapping } = useAuth();
   const location = useLocation();
+  if (bootstrapping) {
+    return <PageFallback />;
+  }
   if (isLoggedIn) {
     const redirectTo = location.state?.from?.pathname || "/";
     return <Navigate to={redirectTo} replace />;

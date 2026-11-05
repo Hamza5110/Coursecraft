@@ -34,8 +34,14 @@ function ResetPassword() {
       return;
     }
 
-    if (form.newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+    if (
+      form.newPassword.length < 8 ||
+      !/[A-Za-z]/.test(form.newPassword) ||
+      !/[0-9]/.test(form.newPassword)
+    ) {
+      setError(
+        "Password must be at least 8 characters and include a letter and a number",
+      );
       return;
     }
 
@@ -80,7 +86,7 @@ function ResetPassword() {
           placeholder="New password"
           className="w-full border p-2 rounded mb-4"
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
         />
         <input
@@ -91,7 +97,7 @@ function ResetPassword() {
           placeholder="Confirm new password"
           className="w-full border p-2 rounded mb-4"
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
         />
         <button

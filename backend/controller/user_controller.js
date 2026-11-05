@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import { clearAccessCookie } from "../utils/cookies.js";
+import { deleteUserAndRelatedData } from "../utils/deleteUserData.js";
 import { BCRYPT_ROUNDS, validatePassword } from "../utils/password.js";
 
 const getAllUsers = async (req, res) => {
@@ -221,6 +223,8 @@ const changePassword = async (req, res) => {
     user.passwordChangedAt = new Date();
     await user.save();
 
+    clearAccessCookie(res);
+
     res.status(200).json({
       success: true,
       message: "Password updated successfully. Please log in again.",
@@ -254,7 +258,7 @@ const deleteUser = async (req, res) => {
       });
     }
 
-    await user.deleteOne();
+    await deleteUserAndRelatedData(user._id);
     res
       .status(200)
       .json({ success: true, message: "User deleted successfully" });

@@ -6,72 +6,85 @@
   useMemo,
   useState,
 } from "react";
-import { setUnauthorizedHandler } from "../api/blogApi";
+import { getMe, logout as apiLogout, setUnauthorizedHandler } from "../api/blogApi";
 
 const AuthContext = createContext(null);
 
-function readStoredUser() {
-  try {
-    const saved = localStorage.getItem("user");
-    if (!saved) return null;
-    return JSON.parse(saved);
-  } catch {
-    localStorage.removeItem("user");
-    return null;
-  }
-}
-
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [user, setUser] = useState(() => readStoredUser());
+  const [user, setUser] = useState(null);
+  const [bootstrapping, setBootstrapping] = useState(true);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
+  const clearSession = useCallback(() => {
     setUser(null);
   }, []);
 
-  const login = useCallback((newToken, newUser) => {
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setToken(newToken);
+  const logout = useCallback(async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // Cookie may already be cleared/expired — still drop local session.
+    } finally {
+      clearSession();
+    }
+  }, [clearSession]);
+
+  const login = useCallback((newUser) => {
     setUser(newUser);
   }, []);
 
   const updateUser = useCallback((nextUser) => {
-    localStorage.setItem("user", JSON.stringify(nextUser));
     setUser(nextUser);
   }, []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
-      logout();
+      clearSession();
     });
     return () => setUnauthorizedHandler(null);
-  }, [logout]);
+  }, [clearSession]);
 
   useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === "token" || e.key === "user") {
-        setToken(localStorage.getItem("token"));
-        setUser(readStoredUser());
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        // Clear any legacy JWT left in localStorage from older builds.
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        const data = await getMe(controller.signal);
+        if (data?.user) {
+          setUser({
+            id: data.user.id,
+            username: data.user.username,
+            email: data.user.email,
+            role: data.user.role,
+          });
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setUser(null);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setBootstrapping(false);
+        }
       }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    })();
+
+    return () => controller.abort();
   }, []);
 
   const value = useMemo(
     () => ({
-      token,
       user,
-      isLoggedIn: !!token,
+      isLoggedIn: !!user,
+      bootstrapping,
       login,
       logout,
       updateUser,
     }),
-    [token, user, login, logout, updateUser],
+    [user, bootstrapping, login, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
