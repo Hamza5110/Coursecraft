@@ -168,7 +168,7 @@ const forgotPassword = async (req, res) => {
 
     sendMail({
       to: user.email,
-      subject: "Reset your Blog Verse password",
+      subject: "Reset your Coursecraft password",
       text: `Reset your password using this link (expires in 15 minutes):\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
       html: `<p>Reset your password using this link (expires in <strong>15 minutes</strong>):</p>
              <p><a href="${resetUrl}">${resetUrl}</a></p>

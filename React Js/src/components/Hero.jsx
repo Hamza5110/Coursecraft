@@ -7,7 +7,7 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.12),transparent_45%)]" />
       <div className="relative mx-auto max-w-3xl px-4 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">
-          Blog Verse
+          Coursecraft
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           Stories and courses that move you forward

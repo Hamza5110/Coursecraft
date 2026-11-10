@@ -6,10 +6,10 @@ function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-display text-lg font-semibold text-gray-900">
-            Blog Verse
+            Coursecraft
           </p>
           <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} Blog Verse. All rights reserved.
+            &copy; {new Date().getFullYear()} Coursecraft. All rights reserved.
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-4 text-sm">

@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <h1 className="mt-2 text-3xl font-bold text-gray-900">Page not found</h1>
       <p className="mt-3 text-gray-600">
-        That URL doesn&apos;t match anything on Blog Verse.
+        That URL doesn&apos;t match anything on Coursecraft.
       </p>
       <Button as={Link} to="/" className="mt-6">
         Back to home

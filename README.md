@@ -1,4 +1,4 @@
-# Blog Verse
+# Coursecraft
 
 Full-stack learning platform with a React frontend and Express + MongoDB backend. Users can sign up, log in, manage blog posts and comments, browse and enroll in courses with lessons, search and filter content, and manage their profile. Access is role-based (`student`, `instructor`, `admin`).
 
@@ -13,7 +13,7 @@ Full-stack learning platform with a React frontend and Express + MongoDB backend
 ## Project Structure
 
 ```
-blog-verse/
+coursecraft/
 ├── React Js/                 # Frontend (Vite + React)
 │   └── src/
 │       ├── api/              # API client (credentials: include)
@@ -63,7 +63,7 @@ SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=your_smtp_user
 SMTP_PASS=your_smtp_password
-SMTP_FROM="Blog Verse <noreply@example.com>"
+SMTP_FROM="Coursecraft <noreply@example.com>"
 ```
 
 Start the server:

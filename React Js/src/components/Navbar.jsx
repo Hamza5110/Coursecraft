@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import logo from "../assets/logo-nav.png";
+import logo from "../assets/logo-nav.svg";
 import { useAuth } from "../context/AuthContext";
 
 const linkClass = ({ isActive }) =>
@@ -50,15 +50,18 @@ function Navbar() {
         <Link
           to="/"
           onClick={closeMenus}
-          className="flex h-full shrink-0 items-center py-2"
+          className="flex h-full shrink-0 items-center gap-2.5 py-2"
         >
           <img
             src={logo}
-            alt="Blog Verse"
-            className="h-10 w-auto object-contain object-left sm:h-11"
-            width={200}
-            height={48}
+            alt=""
+            className="h-8 w-8 shrink-0 sm:h-9 sm:w-9"
+            width={36}
+            height={36}
           />
+          <span className="font-display text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+            Coursecraft
+          </span>
         </Link>
 
         <div className="hidden lg:flex items-center gap-6">

@@ -18,37 +18,37 @@ const SEED_PASSWORD = "Password1";
 const userSeeds = [
   {
     username: "Admin",
-    email: "admin@blogverse.com",
+    email: "admin@coursecraft.com",
     role: "admin",
   },
   {
     username: "Sara Khan",
-    email: "sara@blogverse.com",
+    email: "sara@coursecraft.com",
     role: "instructor",
   },
   {
     username: "Omar Ali",
-    email: "omar@blogverse.com",
+    email: "omar@coursecraft.com",
     role: "instructor",
   },
   {
     username: "Maya Chen",
-    email: "maya@blogverse.com",
+    email: "maya@coursecraft.com",
     role: "student",
   },
   {
     username: "James Wilson",
-    email: "james@blogverse.com",
+    email: "james@coursecraft.com",
     role: "student",
   },
   {
     username: "Ayesha Noor",
-    email: "ayesha@blogverse.com",
+    email: "ayesha@coursecraft.com",
     role: "student",
   },
   {
     username: "Leo Martinez",
-    email: "leo@blogverse.com",
+    email: "leo@coursecraft.com",
     role: "student",
   },
 ];
@@ -79,13 +79,13 @@ async function upsertUsers(passwordHash) {
 }
 
 async function seedBlogs(users) {
-  const admin = users["admin@blogverse.com"];
-  const sara = users["sara@blogverse.com"];
-  const omar = users["omar@blogverse.com"];
-  const maya = users["maya@blogverse.com"];
-  const james = users["james@blogverse.com"];
-  const ayesha = users["ayesha@blogverse.com"];
-  const leo = users["leo@blogverse.com"];
+  const admin = users["admin@coursecraft.com"];
+  const sara = users["sara@coursecraft.com"];
+  const omar = users["omar@coursecraft.com"];
+  const maya = users["maya@coursecraft.com"];
+  const james = users["james@coursecraft.com"];
+  const ayesha = users["ayesha@coursecraft.com"];
+  const leo = users["leo@coursecraft.com"];
 
   const blogDefs = [
     {
@@ -124,7 +124,7 @@ async function seedBlogs(users) {
       comments: [
         {
           author: sara,
-          content: "We adopted this envelope on Blog Verse and debugging got much easier.",
+          content: "We adopted this envelope on Coursecraft and debugging got much easier.",
         },
       ],
     },
@@ -243,12 +243,12 @@ async function seedBlogs(users) {
 }
 
 async function seedCourses(users) {
-  const sara = users["sara@blogverse.com"];
-  const omar = users["omar@blogverse.com"];
-  const maya = users["maya@blogverse.com"];
-  const james = users["james@blogverse.com"];
-  const ayesha = users["ayesha@blogverse.com"];
-  const leo = users["leo@blogverse.com"];
+  const sara = users["sara@coursecraft.com"];
+  const omar = users["omar@coursecraft.com"];
+  const maya = users["maya@coursecraft.com"];
+  const james = users["james@coursecraft.com"];
+  const ayesha = users["ayesha@coursecraft.com"];
+  const leo = users["leo@coursecraft.com"];
 
   const courseDefs = [
     {
